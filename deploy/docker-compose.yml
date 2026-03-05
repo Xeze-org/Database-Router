@@ -1,0 +1,43 @@
+# db-router — standalone deploy
+# ============================================================
+# Use this if you already have PostgreSQL / MongoDB / Redis
+# running elsewhere. Just point config.json at them.
+#
+# Quick start:
+#   1. cp config.example.json config.json
+#   2. Edit config.json with your DB connection details
+#   3. docker compose up -d
+#
+# The router will be available at http://localhost:8080
+# Protect it with Caddy (or any reverse proxy) + an API key.
+# ============================================================
+
+services:
+  db-router:
+    image: ghcr.io/xeze/db-router:latest
+    container_name: db_router
+    restart: unless-stopped
+
+    # config.json is mounted read-only at runtime.
+    # The image contains no credentials — safe to share publicly.
+    volumes:
+      - ./config.json:/app/config.json:ro
+
+    ports:
+      - "127.0.0.1:8080:8080"   # localhost only — put Caddy/nginx in front
+
+    environment:
+      PORT: "8080"
+
+    # Optional resource cap — the router is very lightweight
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

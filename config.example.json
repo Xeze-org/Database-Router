@@ -1,0 +1,23 @@
+{
+  "postgres": {
+    "enabled": "true",
+    "host": "localhost",
+    "port": 5432,
+    "user": "your_pg_user",
+    "password": "your_pg_password",
+    "database": "your_db_name",
+    "sslmode": "disable"
+  },
+  "mongo": {
+    "enabled": "true",
+    "uri": "mongodb://user:password@host:27017/dbname?authSource=admin",
+    "database": "your_mongo_db"
+  },
+  "redis": {
+    "enabled": "true",
+    "host": "localhost",
+    "port": 6379,
+    "password": "your_redis_password",
+    "db": 0
+  }
+}

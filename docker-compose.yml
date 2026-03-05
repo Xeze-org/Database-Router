@@ -1,0 +1,95 @@
+services:
+  postgres:
+    image: postgres:16.13-trixie
+    container_name: unified_postgres
+    restart: always
+    env_file:
+    - .env
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+    # Binds only to localhost to reduce attack surface
+    - "127.0.0.1:5432:5432"
+    volumes:
+    - ./postgres_data:/var/lib/postgresql/data
+    networks:
+    - db_network
+
+  mongodb:
+    image: mongo:latest
+    container_name: unified_mongodb
+    restart: always
+    env_file:
+    - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+    # Binds only to localhost to reduce attack surface
+    - "127.0.0.1:27017:27017"
+    volumes:
+    - ./mongodb_data:/data/db
+    networks:
+    - db_network
+    deploy:
+      resources:
+        limits:
+          # Prevents MongoDB from eating all 1GB of RAM and restarting
+          memory: 400M
+
+  redis:
+    image: redis:7-alpine
+    container_name: unified_redis
+    restart: always
+    env_file:
+    - .env
+    command: redis-server --requirepass ${REDIS_PASSWORD} --maxmemory 100mb --maxmemory-policy allkeys-lru
+    ports:
+    # Binds only to localhost to reduce attack surface
+    - "127.0.0.1:6379:6379"
+    volumes:
+    - ./redis_data:/data
+    networks:
+    - db_network
+    deploy:
+      resources:
+        limits:
+          memory: 100M
+
+  db-router:
+    # Pull the pre-built image from GitHub Container Registry.
+    # Replace with your own image name after pushing:
+    #   ghcr.io/<your-github-user>/db-router:latest
+    #
+    # To build locally instead, comment out 'image' and uncomment 'build':
+    #   build:
+    #     context: .
+    #     dockerfile: Dockerfile
+    image: ghcr.io/xeze/db-router:latest
+    container_name: unified_db_router
+    restart: always
+    # config.json is mounted read-only — credentials never baked into image.
+    # Copy config.example.json → config.json and fill in your values.
+    volumes:
+      - ./config.json:/app/config.json:ro
+    environment:
+      PORT: 8080
+    ports:
+    # Only expose the API on localhost — your apps call this, not the DBs directly
+    - "127.0.0.1:8080:8080"
+    depends_on:
+    - postgres
+    - mongodb
+    - redis
+    networks:
+    - db_network
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+networks:
+  db_network:
+    driver: bridge

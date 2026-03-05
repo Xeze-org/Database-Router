@@ -1,0 +1,34 @@
+# Never bake credentials or local artifacts into the image
+config.json
+.env
+*.env
+
+# Go build outputs
+*.exe
+*.exe~
+db-manager
+db-router
+vendor/
+
+# Git
+.git/
+.gitignore
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Data volumes
+postgres_data/
+mongodb_data/
+redis_data/
+
+# Docs / tests
+*.md
+*_test.go
+
+# CI
+.github/

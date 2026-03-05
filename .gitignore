@@ -1,0 +1,71 @@
+# ── Compiled binaries ─────────────────────────────────────────────────────────
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+db-manager
+db-manager.exe
+db-router
+db-router.exe
+
+# ── Go build / test artifacts ─────────────────────────────────────────────────
+*.test
+*.out
+dist/
+build/
+
+# ── Go module download cache (never commit — restored by go mod download) ─────
+vendor/
+
+# ── Go workspace file (local-only tool, not for sharing) ─────────────────────
+go.work
+go.work.sum
+
+# ── Dependency lock checksums brought in by tools (keep go.sum, ignore rest) ──
+# go.sum is intentionally NOT ignored — it must be committed
+
+# ── Config with credentials ───────────────────────────────────────────────────
+# config.json may contain DB passwords — use config.example.json instead
+config.json
+
+# ── Environment / secret files ────────────────────────────────────────────────
+.env
+.env.*
+*.env
+secrets/
+
+# ── Log files ─────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Docker local overrides ────────────────────────────────────────────────────
+docker-compose.override.yml
+docker-compose.local.yml
+
+# ── Docker data volumes (mounted paths) ───────────────────────────────────────
+postgres_data/
+mongodb_data/
+redis_data/
+
+# ── OS generated files ────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# ── Editor / IDE ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Profiling / coverage ──────────────────────────────────────────────────────
+*.prof
+coverage.out
+coverage.html
