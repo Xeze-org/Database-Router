@@ -1,4 +1,4 @@
-# db-router
+# database-router
 
 A lightweight, self-hosted REST API that gives any application a single HTTPS endpoint to talk to PostgreSQL, MongoDB, and Redis. No direct database credentials in your app code.
 
@@ -32,7 +32,7 @@ docker run -d \
   -p 8080:8080 \
   -v $(pwd)/config.json:/app/config.json:ro \
   --name db-router \
-  ghcr.io/youruser/db-router:latest
+  ghcr.io/xeze-org/database-router:latest
 ```
 
 Or with Compose:
@@ -53,7 +53,7 @@ curl -H "X-API-Key: your-key" http://localhost:8080/api/v1/test/all
 **Requirements:** Go 1.21+
 
 ```bash
-git clone https://github.com/youruser/db-router
+git clone https://github.com/xeze-org/database-router
 cd db-router
 
 # Windows
@@ -61,8 +61,8 @@ start.bat
 
 # Linux / macOS
 go mod download
-go build -o db-router ./cmd/
-./db-router
+go build -o database-router ./cmd/
+./databaseb-router
 ```
 
 Default port is `8080`. Override with `PORT=9090 ./db-router`.
