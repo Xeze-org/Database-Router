@@ -8,7 +8,7 @@ A lightweight, self-hosted REST API that gives any application a single HTTPS en
 
 ```mermaid
 flowchart LR
-    A([Your App]) -->|HTTPS + API Key| B[db-router :8080]
+    A([Your App]) -->|HTTPS + API Key| B[database-router :8080]
     B --> C[(PostgreSQL)]
     B --> D[(MongoDB)]
     B --> E[(Redis)]
@@ -31,7 +31,7 @@ cp config.example.json config.json
 docker run -d \
   -p 8080:8080 \
   -v $(pwd)/config.json:/app/config.json:ro \
-  --name db-router \
+  --name database-router \
   ghcr.io/xeze-org/database-router:latest
 ```
 
@@ -53,8 +53,8 @@ curl -H "X-API-Key: your-key" http://localhost:8080/api/v1/test/all
 **Requirements:** Go 1.21+
 
 ```bash
-git clone https://github.com/xeze-org/database-router
-cd db-router
+git clone https://github.com/Xeze-org/Database-Router
+cd Database-Router
 
 # Windows
 start.bat
@@ -62,10 +62,10 @@ start.bat
 # Linux / macOS
 go mod download
 go build -o database-router ./cmd/
-./databaseb-router
+./database-router
 ```
 
-Default port is `8080`. Override with `PORT=9090 ./db-router`.
+Default port is `8080`. Override with `PORT=9090 ./database-router`.
 
 ---
 
@@ -123,7 +123,7 @@ curl -X POST -H "X-API-Key: $KEY" -H "Content-Type: application/json" \
 
 ```mermaid
 flowchart TD
-    root[db-router/]
+    root[database-router/]
     root --> cmd[cmd/main.go\nentry point + routes]
     root --> internal[internal/]
     root --> deploy[deploy/docker-compose.yml\nstandalone compose]
