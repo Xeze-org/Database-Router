@@ -13,7 +13,7 @@ Built-in commands:
     .schema <table>      show column names and types
     .count  <table>      row count
     .db <name>           switch active DB
-    .help  / \?          show this help
+    .help  / \?         show this help
     quit / exit / \q     exit
 """
 
@@ -21,6 +21,25 @@ import sys
 import os
 import json
 import requests
+
+# ── Load .env file (if present) ───────────────────────────────────────
+def _load_dotenv(path=".env"):
+    """Minimal .env loader — no external deps required."""
+    try:
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, _, val = line.partition("=")
+                key = key.strip()
+                val = val.strip().strip('"').strip("'")
+                if key and key not in os.environ:  # don't overwrite real env vars
+                    os.environ[key] = val
+    except FileNotFoundError:
+        pass
+
+_load_dotenv()
 
 # ── Config ────────────────────────────────────────────────────────────────────
 # Load from environment variables. Copy .env.example to .env and fill in values,
@@ -157,10 +176,12 @@ def run_sql(sql):
 # ── Special dot-commands ──────────────────────────────────────────────────────
 HELP_TEXT = f"""
 {BOLD}PostgreSQL commands:{RESET}
+  .databases           list all databases on the server
   .tables              list all tables in the active database
   .schema <table>      column names, types and nullability
   .count  <table>      SELECT COUNT(*) shortcut
   .db     <name>       switch active database
+  .createdb <name>     create a new database
 
 {BOLD}SQL:{RESET}
   Type any SQL statement. End with ; OR press Enter on a blank line to execute.
@@ -177,6 +198,20 @@ def handle_special(cmd, db_ref):
     """
     parts = cmd.strip().split(None, 2)
     op = parts[0].lower()
+
+    # ── .databases ────────────────────────────────────────────────
+    if op == ".databases":
+        r = _get(f"{PG_BASE}/databases")
+        databases = r.json().get("databases") or []
+        if not databases:
+            print(f"\n{DIM}No databases found{RESET}\n")
+        else:
+            print(f"\n{BOLD}Databases:{RESET}")
+            for d in databases:
+                marker = f"  {GREEN}*{RESET}" if d == db_ref[0] else "   "
+                print(f"{marker} {CYAN}{d}{RESET}")
+            print()
+        return True
 
     # ── .tables ───────────────────────────────────────────────────────────────
     if op == ".tables":
@@ -211,6 +246,24 @@ def handle_special(cmd, db_ref):
             print(f"\n{YELLOW}Usage:{RESET} .count <table>\n")
             return True
         run_sql(f"SELECT COUNT(*) AS total FROM {parts[1]}")
+        return True
+
+    # ── .createdb <name> ─────────────────────────────────────────────
+    if op == ".createdb":
+        if len(parts) < 2:
+            print(f"\n{YELLOW}Usage:{RESET} .createdb <name>\n")
+            return True
+        name = parts[1]
+        try:
+            r = _post(f"{PG_BASE}/query", {"query": f"CREATE DATABASE {name}"})
+            data = r.json()
+            if "error" in data and data["error"]:
+                print(f"\n{RED}ERROR:{RESET} {data['error']}\n")
+            else:
+                print(f"\n{GREEN}CREATE DATABASE{RESET} {name}\n")
+                print(f"{DIM}Tip: switch to it with  .db {name}{RESET}\n")
+        except Exception as exc:
+            print(f"\n{RED}ERROR:{RESET} {exc}\n")
         return True
 
     # ── .db <name> ────────────────────────────────────────────────────────────
