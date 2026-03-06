@@ -92,14 +92,25 @@ func (h *Handler) ExecutePostgresQuery(c *gin.Context) {
 	}
 
 	var req struct {
-		Query string `json:"query" binding:"required"`
+		Query    string `json:"query" binding:"required"`
+		Database string `json:"database"` // Optional: target database
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	rows, err := h.DB.PostgresDB.Query(req.Query)
+	// Get connection for the specified database
+	db, isTemp, err := h.DB.GetPostgresConnection(req.Database)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if isTemp {
+		defer db.Close() // Close temporary connection after query
+	}
+
+	rows, err := db.Query(req.Query)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -134,12 +134,15 @@ def print_table(rows, columns=None):
 
 
 # ── Run SQL ───────────────────────────────────────────────────────────────────
-def run_sql(sql):
+def run_sql(sql, db_name=None):
     sql = sql.strip().rstrip(";").strip()
     if not sql:
         return
     try:
-        r = _post(f"{PG_BASE}/query", {"query": sql})
+        payload = {"query": sql}
+        if db_name:
+            payload["database"] = db_name
+        r = _post(f"{PG_BASE}/query", payload)
         data = r.json()
 
         if "error" in data:
@@ -258,7 +261,7 @@ def handle_special(cmd, db_ref):
                 FROM information_schema.columns
                 WHERE table_name = $${table}$$
                 ORDER BY ordinal_position
-            """)
+            """, db_ref[0])
         except ValueError as e:
             print(f"\n{RED}ERROR:{RESET} {e}\n")
         return True
@@ -271,7 +274,7 @@ def handle_special(cmd, db_ref):
         try:
             # Sanitize table name to prevent SQL injection
             safe_table = sanitize_identifier(parts[1])
-            run_sql(f"SELECT COUNT(*) AS total FROM {safe_table}")
+            run_sql(f"SELECT COUNT(*) AS total FROM {safe_table}", db_ref[0])
         except ValueError as e:
             print(f"\n{RED}ERROR:{RESET} {e}\n")
         return True
@@ -349,7 +352,7 @@ def main():
                     sql = " ".join(buffer)
                     if _rl_available:
                         readline.add_history(sql)
-                    run_sql(sql)
+                    run_sql(sql, db_ref[0])
                     buffer.clear()
                 continue
 
@@ -373,7 +376,7 @@ def main():
                 sql = " ".join(buffer)
                 if _rl_available:
                     readline.add_history(sql)
-                run_sql(sql)
+                run_sql(sql, db_ref[0])
                 buffer.clear()
 
     except KeyboardInterrupt:

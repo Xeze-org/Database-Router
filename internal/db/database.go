@@ -99,6 +99,47 @@ func (m *Manager) initPostgres() error {
 	return nil
 }
 
+// GetPostgresConnection returns a connection to a specific PostgreSQL database.
+// If dbname is empty or matches the default database, returns the existing connection.
+// Otherwise, creates a temporary connection for the specified database.
+// Caller is responsible for closing temporary connections.
+func (m *Manager) GetPostgresConnection(dbname string) (*sql.DB, bool, error) {
+	if m.PostgresDB == nil {
+		return nil, false, fmt.Errorf("PostgreSQL not enabled")
+	}
+
+	// If no database specified or same as default, use existing connection
+	if dbname == "" || dbname == m.Config.Postgres.Database {
+		return m.PostgresDB, false, nil
+	}
+
+	// Create temporary connection to the specified database
+	connStr := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+		m.Config.Postgres.Host,
+		m.Config.Postgres.Port,
+		m.Config.Postgres.User,
+		m.Config.Postgres.Password,
+		dbname,
+		m.Config.Postgres.SSLMode,
+	)
+
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, false, err
+	}
+
+	ctx, cancel := context.WithTimeout(m.ctx, 5*time.Second)
+	defer cancel()
+
+	if err := db.PingContext(ctx); err != nil {
+		db.Close()
+		return nil, false, err
+	}
+
+	return db, true, nil
+}
+
 func (m *Manager) initMongo() error {
 	ctx, cancel := context.WithTimeout(m.ctx, 10*time.Second)
 	defer cancel()

@@ -84,7 +84,22 @@ POST /api/v1/postgres/query
 ```
 Body:
 ```json
-{"query": "SELECT count(*) FROM users WHERE active = true"}
+{
+  "query": "SELECT count(*) FROM users WHERE active = true",
+  "database": "mydb"
+}
+```
+**Fields:**
+- `query` (required): SQL statement to execute
+- `database` (optional): Target database name. If omitted, uses the default database from config.json
+
+**Response:**
+```json
+{
+  "columns": ["count"],
+  "rows": [{"count": 42}],
+  "count": 1
+}
 ```
 
 ---
