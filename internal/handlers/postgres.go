@@ -3,10 +3,28 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
+
+// isValidIdentifier checks if a string is a valid SQL identifier
+// (letters, numbers, underscores; must start with letter or underscore)
+func isValidIdentifier(name string) bool {
+	if name == "" {
+		return false
+	}
+	matched, _ := regexp.MatchString(`^[a-zA-Z_][a-zA-Z0-9_]*$`, name)
+	return matched
+}
+
+// quoteIdentifier quotes a SQL identifier to prevent injection
+func quoteIdentifier(name string) string {
+	// Replace any double quotes with two double quotes (PostgreSQL escaping)
+	escaped := strings.ReplaceAll(name, `"`, `""`)
+	return fmt.Sprintf(`"%s"`, escaped)
+}
 
 // TestPostgresConnection returns the live connection status.
 func (h *Handler) TestPostgresConnection(c *gin.Context) {
@@ -60,13 +78,24 @@ func (h *Handler) ListPostgresTables(c *gin.Context) {
 	}
 
 	database := c.Param("database")
+
+	// Get connection for the specified database
+	db, isTemp, err := h.DB.GetPostgresConnection(database)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if isTemp {
+		defer db.Close()
+	}
+
 	const q = `
 		SELECT table_name
 		FROM information_schema.tables
 		WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
 	`
 
-	rows, err := h.DB.PostgresDB.Query(q)
+	rows, err := db.Query(q)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -84,7 +113,8 @@ func (h *Handler) ListPostgresTables(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"database": database, "tables": tables})
 }
 
-// ExecutePostgresQuery runs arbitrary SQL and returns columns + rows.
+// ExecutePostgresQuery runs arbitrary SQL and returns columns + rows for SELECT,
+// or rows_affected for DML/DDL statements.
 func (h *Handler) ExecutePostgresQuery(c *gin.Context) {
 	if h.DB.PostgresDB == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "PostgreSQL not enabled"})
@@ -110,41 +140,72 @@ func (h *Handler) ExecutePostgresQuery(c *gin.Context) {
 		defer db.Close() // Close temporary connection after query
 	}
 
-	rows, err := db.Query(req.Query)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer rows.Close()
+	// Trim and determine query type
+	query := strings.TrimSpace(req.Query)
+	queryUpper := strings.ToUpper(query)
 
-	columns, err := rows.Columns()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+	// Check if this is a SELECT query (returns rows)
+	// SELECT, SHOW, WITH (CTE), TABLE, VALUES can return rows
+	isSelectLike := strings.HasPrefix(queryUpper, "SELECT") ||
+		strings.HasPrefix(queryUpper, "SHOW") ||
+		strings.HasPrefix(queryUpper, "WITH") ||
+		strings.HasPrefix(queryUpper, "TABLE") ||
+		strings.HasPrefix(queryUpper, "VALUES")
 
-	var results []map[string]interface{}
-	for rows.Next() {
-		values := make([]interface{}, len(columns))
-		ptrs := make([]interface{}, len(columns))
-		for i := range columns {
-			ptrs[i] = &values[i]
+	if isSelectLike {
+		// Use Query() for SELECT-like statements
+		rows, err := db.Query(query)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
-		if err := rows.Scan(ptrs...); err != nil {
-			continue
-		}
-		row := make(map[string]interface{})
-		for i, col := range columns {
-			row[col] = values[i]
-		}
-		results = append(results, row)
-	}
+		defer rows.Close()
 
-	c.JSON(http.StatusOK, gin.H{
-		"columns": columns,
-		"rows":    results,
-		"count":   len(results),
-	})
+		columns, err := rows.Columns()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		var results []map[string]interface{}
+		for rows.Next() {
+			values := make([]interface{}, len(columns))
+			ptrs := make([]interface{}, len(columns))
+			for i := range columns {
+				ptrs[i] = &values[i]
+			}
+			if err := rows.Scan(ptrs...); err != nil {
+				continue
+			}
+			row := make(map[string]interface{})
+			for i, col := range columns {
+				row[col] = values[i]
+			}
+			results = append(results, row)
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"columns": columns,
+			"rows":    results,
+			"count":   len(results),
+		})
+	} else {
+		// Use Exec() for DML/DDL statements (INSERT, UPDATE, DELETE, CREATE, DROP, ALTER, etc.)
+		result, err := db.Exec(query)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		rowsAffected, _ := result.RowsAffected()
+
+		// For statements like CREATE DATABASE, DROP TABLE, etc., rowsAffected is typically 0
+		// But the command succeeded if no error occurred
+		c.JSON(http.StatusOK, gin.H{
+			"rows_affected": rowsAffected,
+			"message":       "Command executed successfully",
+		})
+	}
 }
 
 // SelectPostgresData returns rows from a table with an optional row limit.
@@ -156,9 +217,34 @@ func (h *Handler) SelectPostgresData(c *gin.Context) {
 
 	database := c.Param("database")
 	table := c.Param("table")
-	limit := c.DefaultQuery("limit", "100")
+	limitStr := c.DefaultQuery("limit", "100")
 
-	rows, err := h.DB.PostgresDB.Query("SELECT * FROM " + table + " LIMIT " + limit)
+	// Get connection for the specified database
+	db, isTemp, err := h.DB.GetPostgresConnection(database)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if isTemp {
+		defer db.Close()
+	}
+
+	// Validate table name to prevent SQL injection (basic check)
+	if !isValidIdentifier(table) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid table name"})
+		return
+	}
+
+	// Parse and validate limit
+	var limit int
+	if _, err := fmt.Sscanf(limitStr, "%d", &limit); err != nil || limit < 1 || limit > 10000 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit value (must be 1-10000)"})
+		return
+	}
+
+	// Use parameterized query with identifier quoting for table name
+	query := fmt.Sprintf("SELECT * FROM %s LIMIT $1", quoteIdentifier(table))
+	rows, err := db.Query(query, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -189,7 +275,8 @@ func (h *Handler) SelectPostgresData(c *gin.Context) {
 	})
 }
 
-// InsertPostgresData inserts a JSON object as a new row, returning the new id.
+// InsertPostgresData inserts a JSON object as a new row.
+// If the table has an 'id' column, it returns the new id.
 func (h *Handler) InsertPostgresData(c *gin.Context) {
 	if h.DB.PostgresDB == nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "PostgreSQL not enabled"})
@@ -199,10 +286,26 @@ func (h *Handler) InsertPostgresData(c *gin.Context) {
 	database := c.Param("database")
 	table := c.Param("table")
 
+	// Validate table name
+	if !isValidIdentifier(table) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid table name"})
+		return
+	}
+
 	var data map[string]interface{}
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Get connection for the specified database
+	db, isTemp, err := h.DB.GetPostgresConnection(database)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if isTemp {
+		defer db.Close()
 	}
 
 	cols := make([]string, 0, len(data))
@@ -210,22 +313,42 @@ func (h *Handler) InsertPostgresData(c *gin.Context) {
 	vals := make([]interface{}, 0, len(data))
 	i := 1
 	for k, v := range data {
-		cols = append(cols, k)
+		cols = append(cols, quoteIdentifier(k))
 		placeholders = append(placeholders, fmt.Sprintf("$%d", i))
 		vals = append(vals, v)
 		i++
 	}
 
+	// Try to return 'id' if it exists, otherwise just execute
 	query := fmt.Sprintf(
 		"INSERT INTO %s (%s) VALUES (%s) RETURNING id",
-		table,
+		quoteIdentifier(table),
 		strings.Join(cols, ", "),
 		strings.Join(placeholders, ", "),
 	)
 
 	var insertedID interface{}
-	if err := h.DB.PostgresDB.QueryRow(query, vals...).Scan(&insertedID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	err = db.QueryRow(query, vals...).Scan(&insertedID)
+
+	if err != nil {
+		// If RETURNING id fails (column doesn't exist), try without RETURNING
+		query = fmt.Sprintf(
+			"INSERT INTO %s (%s) VALUES (%s)",
+			quoteIdentifier(table),
+			strings.Join(cols, ", "),
+			strings.Join(placeholders, ", "),
+		)
+		_, err = db.Exec(query, vals...)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{
+			"database": database,
+			"table":    table,
+			"message":  "Row inserted successfully",
+		})
 		return
 	}
 
@@ -247,17 +370,38 @@ func (h *Handler) UpdatePostgresData(c *gin.Context) {
 	table := c.Param("table")
 	id := c.Param("id")
 
+	// Validate table name
+	if !isValidIdentifier(table) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid table name"})
+		return
+	}
+
 	var data map[string]interface{}
 	if err := c.ShouldBindJSON(&data); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	if len(data) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No data to update"})
+		return
+	}
+
+	// Get connection for the specified database
+	db, isTemp, err := h.DB.GetPostgresConnection(database)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if isTemp {
+		defer db.Close()
+	}
+
 	setClauses := make([]string, 0, len(data))
 	vals := make([]interface{}, 0, len(data)+1)
 	i := 1
 	for k, v := range data {
-		setClauses = append(setClauses, fmt.Sprintf("%s = $%d", k, i))
+		setClauses = append(setClauses, fmt.Sprintf("%s = $%d", quoteIdentifier(k), i))
 		vals = append(vals, v)
 		i++
 	}
@@ -265,12 +409,12 @@ func (h *Handler) UpdatePostgresData(c *gin.Context) {
 
 	query := fmt.Sprintf(
 		"UPDATE %s SET %s WHERE id = $%d",
-		table,
+		quoteIdentifier(table),
 		strings.Join(setClauses, ", "),
 		i,
 	)
 
-	result, err := h.DB.PostgresDB.Exec(query, vals...)
+	result, err := db.Exec(query, vals...)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -296,7 +440,24 @@ func (h *Handler) DeletePostgresData(c *gin.Context) {
 	table := c.Param("table")
 	id := c.Param("id")
 
-	result, err := h.DB.PostgresDB.Exec("DELETE FROM "+table+" WHERE id = $1", id)
+	// Validate table name
+	if !isValidIdentifier(table) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid table name"})
+		return
+	}
+
+	// Get connection for the specified database
+	db, isTemp, err := h.DB.GetPostgresConnection(database)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if isTemp {
+		defer db.Close()
+	}
+
+	query := fmt.Sprintf("DELETE FROM %s WHERE id = $1", quoteIdentifier(table))
+	result, err := db.Exec(query, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

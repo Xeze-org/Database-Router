@@ -156,18 +156,25 @@ def run_sql(sql, db_name=None):
             print_table(rows, cols)
             return
 
-        # INSERT
+        # DDL/DML: has rows_affected (might be 0 for CREATE DATABASE, etc.)
+        if "rows_affected" in data:
+            affected = data["rows_affected"]
+            message = data.get("message", "")
+            
+            # For DDL statements like CREATE DATABASE, rows_affected is usually 0
+            # Show success message instead
+            if affected == 0 and message:
+                print(f"\n{GREEN}✓{RESET} {message}\n")
+            else:
+                print(f"\n{GREEN}✓{RESET} {affected} row(s) affected\n")
+            return
+
+        # INSERT with RETURNING id (from specific insert endpoint)
         if "inserted_id" in data:
             print(f"\n{GREEN}INSERT{RESET} id={data['inserted_id']}\n")
             return
 
-        # UPDATE / DELETE
-        if "rows_affected" in data:
-            verb = "UPDATE/DELETE"
-            print(f"\n{GREEN}{verb}{RESET} {data['rows_affected']} row(s) affected\n")
-            return
-
-        # Fallback
+        # Fallback for other responses
         print(f"\n{json.dumps(data, indent=2)}\n")
 
     except requests.ConnectionError:
@@ -322,7 +329,10 @@ def main():
 
     # Test connection
     try:
-        r = _get(f"{PG_BASE}/test")
+        # Build test URL: /api/v1/test/postgres instead of /api/v1/postgres/test
+        base_url = PG_BASE.rsplit('/postgres', 1)[0]  # Remove /postgres from end
+        test_url = f"{base_url}/test/postgres"
+        r = _get(test_url)
         info = r.json()
         status = info.get("status", "?")
         host   = info.get("host", PG_BASE)

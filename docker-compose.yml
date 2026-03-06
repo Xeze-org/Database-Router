@@ -59,15 +59,10 @@ services:
           memory: 100M
 
   db-router:
-    # Pull the pre-built image from GitHub Container Registry.
-    # Replace with your own image name after pushing:
-    #   ghcr.io/<your-github-user>/db-router:latest
-    #
-    # To build locally instead, comment out 'image' and uncomment 'build':
-    #   build:
-    #     context: .
-    #     dockerfile: Dockerfile
-    image: ghcr.io/xeze/db-router:latest
+    # Build locally from source
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: unified_db_router
     restart: always
     # config.json is mounted read-only — credentials never baked into image.
@@ -78,7 +73,7 @@ services:
       PORT: 8080
     ports:
     # Only expose the API on localhost — your apps call this, not the DBs directly
-    - "127.0.0.1:8080:8080"
+    - "127.0.0.1:8081:8080"
     depends_on:
     - postgres
     - mongodb
