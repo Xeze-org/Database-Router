@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 pg-query.py — Interactive PostgreSQL REPL via the DB Router API
 ===============================================================
 No psycopg2 needed. All queries go through the HTTPS API.
@@ -173,6 +173,21 @@ def run_sql(sql):
         print(f"\n{RED}ERROR:{RESET} {exc}\n")
 
 
+# ── Input validation ──────────────────────────────────────────────────────────
+def is_valid_identifier(name):
+    """Check if a name is a valid SQL identifier (alphanumeric + underscore)."""
+    if not name:
+        return False
+    # Allow letters, digits, underscores. Must start with letter or underscore.
+    import re
+    return bool(re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', name))
+
+def sanitize_identifier(name):
+    """Validate and quote a SQL identifier to prevent injection."""
+    if not is_valid_identifier(name):
+        raise ValueError(f"Invalid identifier: {name}")
+    return f'"{name}"'  # Use double quotes for PostgreSQL identifiers
+
 # ── Special dot-commands ──────────────────────────────────────────────────────
 HELP_TEXT = f"""
 {BOLD}PostgreSQL commands:{RESET}
@@ -232,12 +247,20 @@ def handle_special(cmd, db_ref):
             print(f"\n{YELLOW}Usage:{RESET} .schema <table>\n")
             return True
         table = parts[1]
-        run_sql(f"""
-            SELECT column_name, data_type, is_nullable, column_default
-            FROM information_schema.columns
-            WHERE table_name = '{table}'
-            ORDER BY ordinal_position
-        """)
+        try:
+            # Validate identifier to prevent SQL injection
+            if not is_valid_identifier(table):
+                print(f"\n{RED}ERROR:{RESET} Invalid table name. Use only letters, numbers, and underscores.\n")
+                return True
+            # Use parameterized query with proper escaping
+            run_sql(f"""
+                SELECT column_name, data_type, is_nullable, column_default
+                FROM information_schema.columns
+                WHERE table_name = $${table}$$
+                ORDER BY ordinal_position
+            """)
+        except ValueError as e:
+            print(f"\n{RED}ERROR:{RESET} {e}\n")
         return True
 
     # ── .count <table> ────────────────────────────────────────────────────────
@@ -245,7 +268,12 @@ def handle_special(cmd, db_ref):
         if len(parts) < 2:
             print(f"\n{YELLOW}Usage:{RESET} .count <table>\n")
             return True
-        run_sql(f"SELECT COUNT(*) AS total FROM {parts[1]}")
+        try:
+            # Sanitize table name to prevent SQL injection
+            safe_table = sanitize_identifier(parts[1])
+            run_sql(f"SELECT COUNT(*) AS total FROM {safe_table}")
+        except ValueError as e:
+            print(f"\n{RED}ERROR:{RESET} {e}\n")
         return True
 
     # ── .createdb <name> ─────────────────────────────────────────────
@@ -255,7 +283,9 @@ def handle_special(cmd, db_ref):
             return True
         name = parts[1]
         try:
-            r = _post(f"{PG_BASE}/query", {"query": f"CREATE DATABASE {name}"})
+            # Sanitize database name to prevent SQL injection
+            safe_name = sanitize_identifier(name)
+            r = _post(f"{PG_BASE}/query", {"query": f"CREATE DATABASE {safe_name}"})
             data = r.json()
             if "error" in data and data["error"]:
                 print(f"\n{RED}ERROR:{RESET} {data['error']}\n")
