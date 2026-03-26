@@ -88,25 +88,6 @@ services:
         limits:
           memory: 64M
 
-  caddy:
-    image: caddy:2-alpine
-    container_name: unified_caddy
-    restart: always
-    ports:
-    - "443:443"
-    volumes:
-    - ./Caddyfile:/etc/caddy/Caddyfile:ro
-    - ./certs:/certs:ro
-    depends_on:
-      db-router:
-        condition: service_started
-    networks:
-    - db_network
-    deploy:
-      resources:
-        limits:
-          memory: 64M
-
 networks:
   db_network:
     driver: bridge

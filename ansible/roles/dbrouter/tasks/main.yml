@@ -144,6 +144,7 @@
     state: present
     pull: always
     build: always
+    remove_orphans: true
   timeout: 600
 
 - name: Wait for gRPC port (build may take a few minutes on small VMs)
