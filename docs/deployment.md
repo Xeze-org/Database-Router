@@ -100,32 +100,6 @@ grpcui -plaintext localhost:50051
 
 ---
 
-## Web UI Test Panel
-
-The web UI is a **separate binary** (`cmd/webui`) that acts as a gRPC client to the router. It serves a browser-based test panel at `:8080`.
-
-```bash
-# Build
-go build -o webui ./cmd/webui
-
-# Run (defaults: GRPC_ADDR=localhost:50051, WEBUI_PORT=8080)
-./webui
-
-# Windows one-shot
-start-webui.bat
-```
-
-Environment variables:
-
-| Variable | Default | Description |
-|---|---|---|
-| `GRPC_ADDR` | `localhost:50051` | Address of the running db-router gRPC server |
-| `WEBUI_PORT` | `8080` | Port for the HTTP test panel |
-
-The web UI and the gRPC router are **fully independent** — stopping the web UI has no effect on the router or its database connections.
-
----
-
 ## Protecting the gRPC port
 
 `database-router` has no built-in authentication. Use one of the following approaches:

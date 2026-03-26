@@ -165,35 +165,10 @@ conn, err := grpc.NewClient("db.yourdomain.com:50051",
 
 ---
 
-### Go Web UI (`cmd/webui`)
-
-The web UI connects to the gRPC router — it also needs a client cert when
-mTLS is enabled on the router.
-
-Set these environment variables before starting `webui`:
-
-```bash
-GRPC_ADDR=db.yourdomain.com:50051
-TLS_ENABLED=true
-TLS_CERT_FILE=certs/client.crt
-TLS_KEY_FILE=certs/client.key
-TLS_CA_FILE=certs/ca.crt
-```
-
-> The webui currently uses insecure credentials. If you need webui → mTLS
-> router, add a TLS loader to `cmd/webui/main.go` (same pattern as the router
-> itself uses in `internal/tlsconfig/loader.go`).
-
----
-
 ### Python app (`examples/python`)
 
-The Python `DbRouterClient` calls the webui HTTP proxy (`:8080`), not gRPC
-directly, so it does **not** need client certificates as long as the webui
-is on the same machine.
-
-If you move the webui behind HTTPS (e.g. nginx with a self-signed cert),
-pass `verify=` to requests:
+The Python `DbRouterClient` calls the Caddy HTTPS proxy (`:443`).
+To present a client certificate with requests, pass `verify=`:
 
 ```python
 from client import DbRouterClient
