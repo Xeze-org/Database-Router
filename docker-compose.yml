@@ -88,17 +88,15 @@ services:
         limits:
           memory: 64M
 
-  webui:
-    build:
-      context: .
-      dockerfile: Dockerfile.webui
-    container_name: unified_webui
+  caddy:
+    image: caddy:2-alpine
+    container_name: unified_caddy
     restart: always
-    environment:
-      GRPC_ADDR: "db-router:50051"
-      WEBUI_PORT: "8080"
     ports:
-    - "127.0.0.1:8080:8080"
+    - "443:443"
+    volumes:
+    - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    - ./certs:/certs:ro
     depends_on:
       db-router:
         condition: service_started
@@ -107,7 +105,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 32M
+          memory: 64M
 
 networks:
   db_network:

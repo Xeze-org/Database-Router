@@ -17,6 +17,10 @@ mongo_password: "CHANGE_ME"
 
 redis_password: "CHANGE_ME"
 
+# ── Web UI basic auth ─────────────────────────────────────────────────
+webui_user: "admin"
+webui_password: "CHANGE_ME"
+
 # ── mTLS ──────────────────────────────────────────────────────────────
 enable_mtls: true
 
