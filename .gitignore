@@ -35,6 +35,21 @@ pg.py
 # config.json may contain DB passwords — use config.example.json instead
 config.json
 
+# ── TLS / mTLS certificates ───────────────────────────────────────────────────
+# Private keys must NEVER be committed.
+# Public certs (.crt) are safe to commit if you want to share them,
+# but keeping everything out of git is the safest default.
+certs/*.key
+certs/*.crt
+certs/*.pem
+certs/*.csr
+certs/*.srl
+certs/*.cnf
+# gen-certs.sh / gen-certs.ps1 are intentionally committed (scripts, not secrets)
+!certs/gen-certs.sh
+!certs/gen-certs.ps1
+!certs/.gitkeep
+
 # ── Environment / secret files ────────────────────────────────────────────────
 .env
 .env.*

@@ -2,7 +2,7 @@
 
 Config is loaded from `config.json` in the working directory at startup.
 
-**Never commit `config.json`** -- it holds your database passwords. Use `config.example.json` as the starting template.
+**Never commit `config.json`** — it holds your database passwords. Use `config.example.json` as the starting template.
 
 ---
 
@@ -66,21 +66,49 @@ Config is loaded from `config.json` in the working directory at startup.
 | `password` | string | no | Leave empty string if no auth |
 | `db` | number | no | Redis DB index (default `0`) |
 
+## TLS / mTLS fields
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `enabled` | bool | yes | `false` = plain-text, `true` = enable TLS |
+| `cert_file` | string | if enabled | Path to server certificate (PEM) |
+| `key_file` | string | if enabled | Path to server private key (PEM) |
+| `ca_file` | string | for mTLS | Path to CA certificate used to verify client certs |
+| `client_auth` | string | for mTLS | `"require"` enforces mutual TLS; omit for server-only TLS |
+
+```json
+"tls": {
+  "enabled": true,
+  "cert_file": "certs/server.crt",
+  "key_file":  "certs/server.key",
+  "ca_file":   "certs/ca.crt",
+  "client_auth": "require"
+}
+```
+
+Generate dev certificates:
+```powershell
+# Windows
+.\certs\gen-certs.ps1 -Domain localhost
+
+# Linux / macOS
+bash certs/gen-certs.sh localhost
+```
+
 ---
 
 ## Environment variable overrides
 
-Every config field can be overridden with an environment variable. This is useful when running in Kubernetes or passing secrets via Docker env rather than a mounted file.
+Every config field can be overridden with an environment variable. Useful for Kubernetes secrets or Docker env injection without a mounted file.
 
 | Env var | Overrides |
 |---|---|
-| `PG_ENABLED` | `postgres.enabled` |
-| `PG_HOST` | `postgres.host` |
-| `PG_PORT` | `postgres.port` |
-| `PG_USER` | `postgres.user` |
-| `PG_PASSWORD` | `postgres.password` |
-| `PG_DATABASE` | `postgres.database` |
-| `PG_SSLMODE` | `postgres.sslmode` |
+| `POSTGRES_ENABLED` | `postgres.enabled` |
+| `POSTGRES_HOST` | `postgres.host` |
+| `POSTGRES_PORT` | `postgres.port` |
+| `POSTGRES_USER` | `postgres.user` |
+| `POSTGRES_PASSWORD` | `postgres.password` |
+| `POSTGRES_DB` | `postgres.database` |
 | `MONGO_ENABLED` | `mongo.enabled` |
 | `MONGO_URI` | `mongo.uri` |
 | `MONGO_DATABASE` | `mongo.database` |
@@ -88,7 +116,13 @@ Every config field can be overridden with an environment variable. This is usefu
 | `REDIS_HOST` | `redis.host` |
 | `REDIS_PORT` | `redis.port` |
 | `REDIS_PASSWORD` | `redis.password` |
-| `REDIS_DB` | `redis.db` |
-| `PORT` | HTTP server port (default `8080`) |
+| `PORT` | gRPC server port (default `50051`) |
+| `WEBUI_PORT` | Web UI HTTP port (default `8080`) |
+| `GRPC_ADDR` | Web UI → router address (default `localhost:50051`) |
+| `TLS_ENABLED` | `"true"` / `"false"` |
+| `TLS_CERT_FILE` | Path to server cert |
+| `TLS_KEY_FILE` | Path to server key |
+| `TLS_CA_FILE` | Path to CA cert |
+| `TLS_CLIENT_AUTH` | `"require"` for mTLS |
 
-If an env var is set, it takes priority over the value in `config.json`.
+If an env var is set it takes priority over the value in `config.json`.

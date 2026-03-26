@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>db-router · Test Panel</title>
+<style>
+  :root {
+    --bg:       #0d1117;
+    --bg2:      #161b22;
+    --bg3:      #21262d;
+    --border:   #30363d;
+    --text:     #e6edf3;
+    --muted:    #7d8590;
+    --blue:     #388bfd;
+    --blue-dim: #1f3c6e;
+    --green:    #3fb950;
+    --red:      #f85149;
+    --amber:    #d29922;
+    --purple:   #a371f7;
+    --cyan:     #39c5cf;
+    --mono:     'Cascadia Code','Fira Code',Consolas,monospace;
+    --sans:     'Segoe UI',system-ui,-apple-system,sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ─────────────────────────────────────────────────────────── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 20px;
+    height: 48px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .logo {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text);
+  }
+  .logo span { color: var(--blue); }
+  .status-bar {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+  }
+  .status-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    transition: border-color .2s, color .2s;
+  }
+  .status-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--border);
+    transition: background .3s;
+  }
+  .status-chip.connected   { border-color: var(--green);  color: var(--green);  }
+  .status-chip.connected   .status-dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-chip.error       { border-color: var(--red);    color: var(--red);    }
+  .status-chip.error       .status-dot { background: var(--red); }
+  .status-chip.disabled    { border-color: var(--border); color: var(--muted);  }
+  .status-chip.disabled    .status-dot { background: var(--border); }
+
+  /* ── Layout ─────────────────────────────────────────────────────────── */
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────────────────────── */
+  aside {
+    width: 200px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .db-tabs {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    gap: 2px;
+    border-bottom: 1px solid var(--border);
+  }
+  .db-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    border: none;
+    background: transparent;
+    text-align: left;
+    transition: background .15s, color .15s;
+    letter-spacing: .3px;
+  }
+  .db-tab .db-icon { font-size: 14px; }
+  .db-tab:hover   { background: var(--bg3); color: var(--text); }
+  .db-tab.active  { background: var(--blue-dim); color: var(--blue); }
+
+  .op-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .op-group-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    color: var(--muted);
+    padding: 10px 8px 4px;
+    text-transform: uppercase;
+  }
+  .op-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--muted);
+    border: none;
+    background: transparent;
+    text-align: left;
+    transition: background .12s, color .12s;
+    width: 100%;
+  }
+  .op-btn .op-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: auto;
+    letter-spacing: .5px;
+  }
+  .get-badge  { background: #0d3a1e; color: var(--green); }
+  .post-badge { background: #1e2d0d; color: #7ee787; }
+  .del-badge  { background: #3a0d0d; color: var(--red); }
+  .op-btn:hover  { background: var(--bg3); color: var(--text); }
+  .op-btn.active { background: var(--bg3); color: var(--text); }
+
+  /* ── Content area ────────────────────────────────────────────────────── */
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-header {
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .panel-title { font-size: 14px; font-weight: 700; }
+  .panel-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  /* Split: form top, results bottom */
+  .content-split {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+  }
+  .form-pane {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    background: var(--bg2);
+  }
+  .result-pane {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  /* ── Form elements ───────────────────────────────────────────────────── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .form-field label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: .3px;
+    text-transform: uppercase;
+  }
+  .form-field input, .form-field select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    padding: 6px 10px;
+    font-family: var(--sans);
+    font-size: 12px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .form-field input:focus, .form-field select:focus {
+    border-color: var(--blue);
+  }
+  .form-field textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    resize: vertical;
+    outline: none;
+    min-height: 80px;
+    transition: border-color .15s;
+  }
+  .form-field textarea:focus { border-color: var(--blue); }
+  .form-field.full { grid-column: 1 / -1; }
+
+  .btn-row { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    padding: 6px 14px;
+    border-radius: 5px;
+    border: none;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: opacity .15s, transform .1s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--blue); color: #fff; }
+  .btn-primary:hover { opacity: .9; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+  .btn-danger { background: var(--red); color: #fff; }
+  .hint {
+    font-size: 10px;
+    color: var(--muted);
+    margin-left: auto;
+  }
+
+  /* ── Result panel ────────────────────────────────────────────────────── */
+  .result-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    font-size: 11px;
+  }
+  .result-label { color: var(--muted); font-weight: 600; }
+  .result-meta  { color: var(--blue); }
+  .result-time  { color: var(--muted); margin-left: auto; }
+  .copy-btn {
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 10px;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-weight: 600;
+    transition: color .15s, border-color .15s;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--muted); }
+
+  .result-body {
+    padding: 16px 20px;
+  }
+
+  /* Table view */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 6px 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--blue);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    white-space: nowrap;
+  }
+  .data-table td {
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .data-table tr:hover td { background: var(--bg3); }
+  .null-val  { color: var(--muted); font-style: italic; }
+  .num-val   { color: var(--purple); }
+  .bool-val  { color: var(--amber); }
+  .str-val   { color: var(--green); }
+
+  /* Chip list */
+  .chip-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color .12s, background .12s;
+  }
+  .chip:hover { border-color: var(--blue); background: var(--blue-dim); }
+  .chip-icon { color: var(--muted); font-size: 12px; }
+
+  /* JSON / raw output */
+  .json-out {
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .json-key    { color: var(--blue); }
+  .json-str    { color: var(--green); }
+  .json-num    { color: var(--purple); }
+  .json-bool   { color: var(--amber); }
+  .json-null   { color: var(--muted); }
+
+  /* Info text box */
+  .info-box {
+    padding: 10px 14px;
+    border-radius: 6px;
+    border-left: 3px solid;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .info-box.success { background: #0d1f12; border-color: var(--green); color: var(--green); }
+  .info-box.error   { background: #1f0d0d; border-color: var(--red);   color: var(--red);   }
+  .info-box.info    { background: #0d1829; border-color: var(--blue);  color: var(--blue);  }
+
+  /* Skeleton / spinner */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 140px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .empty-state .big-icon { font-size: 32px; opacity: .4; }
+
+  /* Redis info */
+  .redis-info {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    color: var(--text);
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+  .redis-section {
+    color: var(--blue);
+    font-weight: 700;
+    margin-top: 8px;
+  }
+  .redis-key  { color: var(--muted); }
+  .redis-val  { color: var(--green); }
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">db<span>-</span>router <span style="font-weight:300;color:var(--muted);font-size:11px;">test panel</span></div>
+  <div class="status-bar">
+    <div class="status-chip disabled" id="chip-pg">
+      <div class="status-dot"></div>PostgreSQL
+    </div>
+    <div class="status-chip disabled" id="chip-mongo">
+      <div class="status-dot"></div>MongoDB
+    </div>
+    <div class="status-chip disabled" id="chip-redis">
+      <div class="status-dot"></div>Redis
+    </div>
+  </div>
+</header>
+
+<!-- ── Layout ──────────────────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside>
+    <div class="db-tabs">
+      <button class="db-tab active" data-db="pg">
+        <span class="db-icon">🐘</span> PostgreSQL
+      </button>
+      <button class="db-tab" data-db="mongo">
+        <span class="db-icon">🍃</span> MongoDB
+      </button>
+      <button class="db-tab" data-db="redis">
+        <span class="db-icon">🔴</span> Redis
+      </button>
+    </div>
+
+    <div class="op-list" id="op-list">
+      <!-- injected by JS -->
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="content">
+    <div class="panel-header">
+      <div class="panel-title" id="panel-title">Select an operation</div>
+      <div class="panel-sub"  id="panel-sub">Choose a database and operation from the sidebar</div>
+    </div>
+
+    <div class="content-split">
+      <div class="form-pane" id="form-pane">
+        <div class="empty-state">
+          <div class="big-icon">⌨️</div>
+          <div>Pick an operation to get started</div>
+        </div>
+      </div>
+      <div class="result-pane" id="result-pane">
+        <div class="empty-state">
+          <div class="big-icon">📊</div>
+          <div>Results will appear here</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// Operation registry
+// ─────────────────────────────────────────────────────────────────────────────
+const OPS = {
+  pg: [
+    { id:'pg-list-dbs',    label:'List Databases',  method:'GET',    badge:'GET' },
+    { id:'pg-create-db',  label:'Create Database', method:'POST',   badge:'POST' },
+    { id:'pg-list-tables', label:'List Tables',     method:'GET',    badge:'GET' },
+    { id:'pg-select',      label:'Select / Browse', method:'GET',    badge:'GET' },
+    { id:'pg-query',       label:'Raw SQL Query',   method:'POST',   badge:'POST' },
+    { id:'pg-insert',      label:'Insert Row',      method:'POST',   badge:'POST' },
+    { id:'pg-update',      label:'Update Row',      method:'POST',   badge:'POST' },
+    { id:'pg-delete',      label:'Delete Row',      method:'DELETE', badge:'DEL' },
+  ],
+  mongo: [
+    { id:'mg-list-dbs',  label:'List Databases',   method:'GET',  badge:'GET' },
+    { id:'mg-list-cols', label:'List Collections', method:'GET',  badge:'GET' },
+    { id:'mg-find',      label:'Find Documents',   method:'GET',  badge:'GET' },
+    { id:'mg-insert',    label:'Insert Document',  method:'POST', badge:'POST' },
+    { id:'mg-update',    label:'Update Document',  method:'POST', badge:'POST' },
+    { id:'mg-delete',    label:'Delete Document',  method:'DELETE',badge:'DEL' },
+  ],
+  redis: [
+    { id:'rd-keys',   label:'List Keys',    method:'GET',    badge:'GET' },
+    { id:'rd-get',    label:'Get Value',    method:'GET',    badge:'GET' },
+    { id:'rd-set',    label:'Set Value',    method:'POST',   badge:'POST' },
+    { id:'rd-delete', label:'Delete Key',   method:'DELETE', badge:'DEL' },
+    { id:'rd-info',   label:'Server Info',  method:'GET',    badge:'GET' },
+  ],
+};
+
+const BADGE_CLASS = { GET:'get-badge', POST:'post-badge', DEL:'del-badge' };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────────────────────────────────────
+let currentDB   = 'pg';
+let currentOpId = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOM helpers
+// ─────────────────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const el = (tag, attrs={}, ...children) => {
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs))
+    if (k === 'class') e.className = v;
+    else if (k === 'html') e.innerHTML = v;
+    else e.setAttribute(k, v);
+  children.forEach(c => typeof c === 'string' ? e.append(c) : e.appendChild(c));
+  return e;
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sidebar rendering
+// ─────────────────────────────────────────────────────────────────────────────
+function renderSidebar(db) {
+  const list = $('op-list');
+  list.innerHTML = '';
+  for (const op of OPS[db]) {
+    const btn = el('button', { class: 'op-btn' + (op.id === currentOpId ? ' active' : ''), 'data-op': op.id },
+      op.label,
+      el('span', { class: `op-badge ${BADGE_CLASS[op.badge] || 'get-badge'}` }, op.badge)
+    );
+    btn.addEventListener('click', () => selectOp(op.id));
+    list.appendChild(btn);
+  }
+}
+
+document.querySelectorAll('.db-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.db-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentDB = tab.dataset.db;
+    currentOpId = null;
+    renderSidebar(currentDB);
+    resetPanels();
+  });
+});
+
+function resetPanels() {
+  $('panel-title').textContent = 'Select an operation';
+  $('panel-sub').textContent   = 'Choose a database and operation from the sidebar';
+  $('form-pane').innerHTML     = `<div class="empty-state"><div class="big-icon">⌨️</div><div>Pick an operation to get started</div></div>`;
+  $('result-pane').innerHTML   = `<div class="empty-state"><div class="big-icon">📊</div><div>Results will appear here</div></div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Operation selection → render form
+// ─────────────────────────────────────────────────────────────────────────────
+const FORM_DEFS = {
+  'pg-list-dbs': {
+    title: 'List Databases', sub: 'Returns all PostgreSQL databases',
+    fields: [],
+    action: () => apiFetch('/api/pg/databases'),
+  },
+  'pg-create-db': {
+    title: 'Create Database', sub: 'Creates a new PostgreSQL database on the server',
+    fields: [{ name:'name', label:'Database Name', placeholder:'my_new_db' }],
+    submitLabel: 'Create',
+    action: d => apiFetch('/api/pg/create-db', 'POST', { name: d.name }),
+  },
+  'pg-list-tables': {
+    title: 'List Tables', sub: 'Returns all tables in a database',
+    fields: [{ name:'db', label:'Database', placeholder:'postgres' }],
+    action: d => apiFetch(`/api/pg/tables?db=${enc(d.db)}`),
+  },
+  'pg-select': {
+    title: 'Select / Browse Data', sub: 'Fetch rows from a table (max limit)',
+    fields: [
+      { name:'db', label:'Database', placeholder:'postgres' },
+      { name:'table', label:'Table', placeholder:'users' },
+      { name:'limit', label:'Limit', placeholder:'50', type:'number' },
+    ],
+    action: d => apiFetch(`/api/pg/select?db=${enc(d.db)}&table=${enc(d.table)}&limit=${enc(d.limit||50)}`),
+  },
+  'pg-query': {
+    title: 'Raw SQL Query', sub: 'Runs any SQL — SELECT/WITH/SHOW renders a table · INSERT/UPDATE/DELETE/DDL returns rows affected',
+    fields: [
+      { name:'database', label:'Database (optional)', placeholder:'shop' },
+      { name:'query', label:'SQL (any statement — SELECT, INSERT, UPDATE, DELETE, CREATE, DROP…)', type:'textarea', placeholder:'-- SELECT example:\nSELECT * FROM products LIMIT 20\n\n-- Write example:\n-- INSERT INTO products (name, price, stock) VALUES (\'New Item\', 9.99, 5)', full:true },
+    ],
+    submitLabel: 'Execute (Ctrl+↵)',
+    action: d => apiFetch('/api/pg/query', 'POST', { query: d.query, database: d.database }),
+  },
+  'pg-insert': {
+    title: 'Insert Row', sub: 'Inserts a new row and returns the generated ID',
+    fields: [
+      { name:'database', label:'Database', placeholder:'postgres' },
+      { name:'table', label:'Table', placeholder:'users' },
+      { name:'data', label:'Data (JSON object)', type:'textarea', placeholder:'{\n  "name": "Alice",\n  "email": "alice@example.com"\n}', full:true },
+    ],
+    action: d => apiFetch('/api/pg/insert', 'POST', { database: d.database, table: d.table, data: parseJSON(d.data) }),
+  },
+  'pg-update': {
+    title: 'Update Row', sub: 'Updates a row by its primary key (id column)',
+    fields: [
+      { name:'database', label:'Database', placeholder:'postgres' },
+      { name:'table', label:'Table', placeholder:'users' },
+      { name:'id', label:'Row ID', placeholder:'1' },
+      { name:'data', label:'Fields to update (JSON)', type:'textarea', placeholder:'{\n  "name": "Bob"\n}', full:true },
+    ],
+    action: d => apiFetch('/api/pg/update', 'POST', { database: d.database, table: d.table, id: d.id, data: parseJSON(d.data) }),
+  },
+  'pg-delete': {
+    title: 'Delete Row', sub: 'Deletes a row by its primary key (id column)',
+    fields: [
+      { name:'database', label:'Database', placeholder:'postgres' },
+      { name:'table', label:'Table', placeholder:'users' },
+      { name:'id', label:'Row ID', placeholder:'1' },
+    ],
+    submitLabel: 'Delete', submitClass: 'btn-danger',
+    action: d => apiFetch(`/api/pg/delete?db=${enc(d.database)}&table=${enc(d.table)}&id=${enc(d.id)}`, 'DELETE'),
+  },
+
+  'mg-list-dbs': {
+    title: 'List Databases', sub: 'Returns all MongoDB databases',
+    fields: [],
+    action: () => apiFetch('/api/mongo/databases'),
+  },
+  'mg-list-cols': {
+    title: 'List Collections', sub: 'Returns all collections in a database',
+    fields: [{ name:'db', label:'Database', placeholder:'mydb' }],
+    action: d => apiFetch(`/api/mongo/collections?db=${enc(d.db)}`),
+  },
+  'mg-find': {
+    title: 'Find Documents', sub: 'Returns all documents in a collection',
+    fields: [
+      { name:'db', label:'Database', placeholder:'mydb' },
+      { name:'col', label:'Collection', placeholder:'users' },
+    ],
+    action: d => apiFetch(`/api/mongo/find?db=${enc(d.db)}&col=${enc(d.col)}`),
+  },
+  'mg-insert': {
+    title: 'Insert Document', sub: 'Inserts a document and returns its _id',
+    fields: [
+      { name:'database', label:'Database', placeholder:'mydb' },
+      { name:'collection', label:'Collection', placeholder:'users' },
+      { name:'document', label:'Document (JSON)', type:'textarea', placeholder:'{\n  "name": "Alice",\n  "age": 30\n}', full:true },
+    ],
+    action: d => apiFetch('/api/mongo/insert', 'POST', { database: d.database, collection: d.collection, document: parseJSON(d.document) }),
+  },
+  'mg-update': {
+    title: 'Update Document', sub: 'Updates a document by its _id',
+    fields: [
+      { name:'database', label:'Database', placeholder:'mydb' },
+      { name:'collection', label:'Collection', placeholder:'users' },
+      { name:'id', label:'Document _id', placeholder:'65f1a2b3c4d5e6f7a8b9c0d1' },
+      { name:'update', label:'Update fields (JSON)', type:'textarea', placeholder:'{\n  "age": 31\n}', full:true },
+    ],
+    action: d => apiFetch('/api/mongo/update', 'POST', { database: d.database, collection: d.collection, id: d.id, update: parseJSON(d.update) }),
+  },
+  'mg-delete': {
+    title: 'Delete Document', sub: 'Deletes a document by its _id',
+    fields: [
+      { name:'database', label:'Database', placeholder:'mydb' },
+      { name:'collection', label:'Collection', placeholder:'users' },
+      { name:'id', label:'Document _id', placeholder:'65f1a2b3c4d5e6f7a8b9c0d1' },
+    ],
+    submitLabel: 'Delete', submitClass: 'btn-danger',
+    action: d => apiFetch(`/api/mongo/delete?db=${enc(d.database)}&col=${enc(d.collection)}&id=${enc(d.id)}`, 'DELETE'),
+  },
+
+  'rd-keys': {
+    title: 'List Keys', sub: 'Scan keys by glob pattern',
+    fields: [{ name:'pattern', label:'Pattern', placeholder:'*' }],
+    action: d => apiFetch(`/api/redis/keys?pattern=${enc(d.pattern||'*')}`),
+  },
+  'rd-get': {
+    title: 'Get Value', sub: 'Fetch a value and its remaining TTL',
+    fields: [{ name:'key', label:'Key', placeholder:'my:key' }],
+    action: d => apiFetch(`/api/redis/get?key=${enc(d.key)}`),
+  },
+  'rd-set': {
+    title: 'Set Value', sub: 'Set key-value with optional TTL (seconds, 0 = no expiry)',
+    fields: [
+      { name:'key',   label:'Key',   placeholder:'my:key' },
+      { name:'value', label:'Value', placeholder:'hello world' },
+      { name:'ttl',   label:'TTL (sec)', placeholder:'0', type:'number' },
+    ],
+    action: d => apiFetch('/api/redis/set', 'POST', { key: d.key, value: d.value, ttl: parseInt(d.ttl)||0 }),
+  },
+  'rd-delete': {
+    title: 'Delete Key', sub: 'Remove a key from Redis',
+    fields: [{ name:'key', label:'Key', placeholder:'my:key' }],
+    submitLabel: 'Delete', submitClass: 'btn-danger',
+    action: d => apiFetch(`/api/redis/delete?key=${enc(d.key)}`, 'DELETE'),
+  },
+  'rd-info': {
+    title: 'Server Info', sub: 'Redis INFO output + keyspace size',
+    fields: [],
+    action: () => apiFetch('/api/redis/info'),
+  },
+};
+
+function selectOp(id) {
+  currentOpId = id;
+  renderSidebar(currentDB);
+
+  const def = FORM_DEFS[id];
+  if (!def) return;
+
+  $('panel-title').textContent = def.title;
+  $('panel-sub').textContent   = def.sub;
+
+  renderForm(def);
+  $('result-pane').innerHTML = `<div class="empty-state"><div class="big-icon">📊</div><div>Hit <strong>Run</strong> to see results</div></div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Form rendering
+// ─────────────────────────────────────────────────────────────────────────────
+function renderForm(def) {
+  const pane = $('form-pane');
+  pane.innerHTML = '';
+
+  if (def.fields.length > 0) {
+    const grid = el('div', { class:'form-grid' });
+    def.fields.forEach(f => {
+      const wrap = el('div', { class:'form-field' + (f.full ? ' full' : '') });
+      wrap.appendChild(el('label', {}, f.label || f.name));
+      let inp;
+      if (f.type === 'textarea') {
+        inp = el('textarea', { id:`f-${f.name}`, placeholder: f.placeholder||'' });
+      } else {
+        inp = el('input', { id:`f-${f.name}`, type: f.type||'text', placeholder: f.placeholder||'' });
+      }
+      // Ctrl+Enter submits
+      inp.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runAction(def);
+      });
+      wrap.appendChild(inp);
+      grid.appendChild(wrap);
+    });
+    pane.appendChild(grid);
+  }
+
+  const row = el('div', { class:'btn-row' });
+  const submitBtn = el('button', {
+    class: 'btn ' + (def.submitClass || 'btn-primary'),
+    id: 'run-btn',
+  }, def.submitLabel || 'Run');
+  submitBtn.addEventListener('click', () => runAction(def));
+  row.appendChild(submitBtn);
+
+  if (def.fields.length === 0) {
+    row.appendChild(el('span', { class:'hint' }, 'No parameters required'));
+  } else {
+    row.appendChild(el('span', { class:'hint' }, 'Ctrl + Enter to run'));
+  }
+  pane.appendChild(row);
+}
+
+function collectFormData(def) {
+  const d = {};
+  def.fields.forEach(f => {
+    const inp = $(`f-${f.name}`);
+    if (inp) d[f.name] = inp.value.trim();
+  });
+  return d;
+}
+
+async function runAction(def) {
+  const btn = $('run-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '…';
+  }
+
+  const t0 = performance.now();
+  let result;
+  try {
+    result = await def.action(collectFormData(def));
+  } catch(err) {
+    result = { error: err.message };
+  }
+  const elapsed = Math.round(performance.now() - t0);
+  if (btn) { btn.disabled = false; btn.textContent = def.submitLabel || 'Run'; }
+
+  renderResult(result, elapsed);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Result rendering
+// ─────────────────────────────────────────────────────────────────────────────
+function renderResult(data, ms) {
+  const pane = $('result-pane');
+
+  // Build header bar
+  const bar = el('div', { class:'result-bar' });
+  const hasError = data && data.error;
+  bar.appendChild(el('span', { class:'result-label' }, hasError ? '⚠ Error' : '✓ Response'));
+  if (!hasError) {
+    const meta = buildMeta(data);
+    if (meta) bar.appendChild(el('span', { class:'result-meta' }, meta));
+  }
+  bar.appendChild(el('span', { class:'result-time' }, `${ms} ms`));
+
+  const copyBtn = el('button', { class:'copy-btn' }, '⎘ Copy');
+  copyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+    copyBtn.textContent = '✓ Copied';
+    setTimeout(() => copyBtn.textContent = '⎘ Copy', 1500);
+  });
+  bar.appendChild(copyBtn);
+
+  const body = el('div', { class:'result-body' });
+
+  if (hasError) {
+    body.appendChild(el('div', { class:'info-box error' }, data.error));
+  } else if (data.databases || data.tables || data.collections || data.keys) {
+    body.appendChild(renderList(data));
+  } else if (data.rows !== undefined || data.data !== undefined || data.documents !== undefined) {
+    body.appendChild(renderTable(data));
+  } else if (data.info !== undefined) {
+    body.appendChild(renderRedisInfo(data));
+  } else if (data.status === 'connected' || data.postgres) {
+    body.appendChild(renderHealth(data));
+  } else {
+    body.appendChild(renderJSON(data));
+  }
+
+  pane.innerHTML = '';
+  pane.appendChild(bar);
+  pane.appendChild(body);
+}
+
+function buildMeta(data) {
+  if (data.count !== undefined) return `${data.count} rows`;
+  if (data.rows_affected !== undefined) return `${data.rows_affected} rows affected`;
+  if (data.inserted_id) return `id: ${data.inserted_id}`;
+  if (data.deleted !== undefined) return data.deleted ? 'Deleted' : 'Key not found';
+  if (data.matched_count !== undefined) return `${data.matched_count} matched · ${data.modified_count} modified`;
+  if (data.deleted_count !== undefined) return `${data.deleted_count} deleted`;
+  return null;
+}
+
+// Chip list for string arrays
+function renderList(data) {
+  const items = data.databases || data.tables || data.collections || data.keys || [];
+  const icon  = data.databases ? '🗄️'
+              : data.tables    ? '📋'
+              : data.collections ? '📂'
+              : '🔑';
+
+  if (items.length === 0)
+    return el('div', { class:'info-box info' }, 'No items found.');
+
+  const wrap = el('div');
+  wrap.appendChild(el('div', { style:'font-size:11px;color:var(--muted);margin-bottom:10px' },
+    `${items.length} item${items.length !== 1 ? 's' : ''}`));
+  const list = el('div', { class:'chip-list' });
+  items.forEach(name => {
+    const chip = el('div', { class:'chip' },
+      el('span', { class:'chip-icon' }, icon),
+      name
+    );
+    // Clicking a chip populates the relevant field in the form
+    chip.addEventListener('click', () => autofillFromChip(name, data));
+    list.appendChild(chip);
+  });
+  wrap.appendChild(list);
+  return wrap;
+}
+
+function autofillFromChip(name, data) {
+  const dbInp   = $('f-db')       || $('f-database');
+  const colInp  = $('f-col')      || $('f-collection');
+  const tableInp = $('f-table');
+
+  if (data.databases && dbInp) { dbInp.value = name; dbInp.focus(); }
+  else if (data.tables && tableInp) { tableInp.value = name; tableInp.focus(); }
+  else if (data.collections && colInp) { colInp.value = name; colInp.focus(); }
+}
+
+// Table / document list
+function renderTable(data) {
+  const rows = data.rows || data.data || data.documents || [];
+  if (rows.length === 0)
+    return el('div', { class:'info-box info' }, 'No rows returned.');
+
+  const table = el('table', { class:'data-table' });
+
+  // Collect all keys for headers
+  const keys = [...new Set(rows.flatMap(r => Object.keys(r)))];
+  const thead = el('thead');
+  const hr = el('tr');
+  keys.forEach(k => hr.appendChild(el('th', {}, k)));
+  thead.appendChild(hr);
+  table.appendChild(thead);
+
+  const tbody = el('tbody');
+  rows.forEach(row => {
+    const tr = el('tr');
+    keys.forEach(k => {
+      const v = row[k];
+      const td = el('td');
+      td.title = v == null ? 'null' : String(v);
+      if (v === null || v === undefined) {
+        td.appendChild(el('span', { class:'null-val' }, 'null'));
+      } else if (typeof v === 'number' || typeof v === 'bigint') {
+        td.appendChild(el('span', { class:'num-val' }, String(v)));
+      } else if (typeof v === 'boolean') {
+        td.appendChild(el('span', { class:'bool-val' }, String(v)));
+      } else if (typeof v === 'object') {
+        td.appendChild(el('span', { class:'str-val' }, JSON.stringify(v)));
+      } else {
+        td.appendChild(el('span', { class:'str-val' }, String(v)));
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  return table;
+}
+
+// Redis INFO display
+function renderRedisInfo(data) {
+  const wrap = el('div');
+
+  const size = el('div', { class:'info-box info', style:'margin-bottom:14px' },
+    `📦 Keyspace size: ${data.db_size} key${data.db_size !== 1 ? 's' : ''}`);
+  wrap.appendChild(size);
+
+  if (data.info) {
+    const pre = el('div', { class:'redis-info' });
+    const lines = data.info.split('\n');
+    lines.forEach(line => {
+      if (line.startsWith('#')) {
+        pre.appendChild(el('div', { class:'redis-section' }, line));
+      } else if (line.includes(':')) {
+        const [k, ...rest] = line.split(':');
+        const row = el('div');
+        row.appendChild(el('span', { class:'redis-key' }, k + ':'));
+        row.appendChild(el('span', { class:'redis-val' }, rest.join(':')));
+        pre.appendChild(row);
+      } else if (line.trim()) {
+        pre.appendChild(el('div', {}, line));
+      }
+    });
+    wrap.appendChild(pre);
+  }
+  return wrap;
+}
+
+// Health status display
+function renderHealth(data) {
+  const wrap = el('div', { style:'display:flex;flex-direction:column;gap:10px' });
+  const dbs = { postgres: '🐘', mongo: '🍃', redis: '🔴' };
+  for (const [name, icon] of Object.entries(dbs)) {
+    const s = data[name];
+    if (!s) continue;
+    const cls = s.status === 'connected' ? 'success' : s.status === 'disabled' ? 'info' : 'error';
+    const label = s.status === 'connected'
+      ? `${icon} ${name} — connected${s.host ? ` (${s.host})` : ''}${s.database ? `, db: ${s.database}` : ''}${s.port ? `:${s.port}` : ''}`
+      : s.status === 'disabled'
+      ? `${icon} ${name} — disabled in config`
+      : `${icon} ${name} — ${s.error}`;
+    wrap.appendChild(el('div', { class:`info-box ${cls}` }, label));
+  }
+  return wrap;
+}
+
+// Generic JSON
+function renderJSON(data) {
+  const pre = el('pre', { class:'json-out' });
+  pre.innerHTML = syntaxHL(JSON.stringify(data, null, 2));
+  return pre;
+}
+
+// Very lightweight JSON syntax highlighter
+function syntaxHL(json) {
+  return json
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"([^"]+)":/g, '<span class="json-key">"$1"</span>:')
+    .replace(/: "([^"]*)"/g, ': <span class="json-str">"$1"</span>')
+    .replace(/: (-?\d+\.?\d*)/g, ': <span class="json-num">$1</span>')
+    .replace(/: (true|false)/g, ': <span class="json-bool">$1</span>')
+    .replace(/: (null)/g,       ': <span class="json-null">$1</span>');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// API helpers
+// ─────────────────────────────────────────────────────────────────────────────
+const enc = encodeURIComponent;
+
+async function apiFetch(url, method='GET', body=null) {
+  const opts = { method, headers:{} };
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, opts);
+  const text = await res.text();
+  try { return JSON.parse(text); }
+  catch { return { error: text || 'empty response' }; }
+}
+
+function parseJSON(str) {
+  if (!str) return {};
+  try { return JSON.parse(str); }
+  catch (e) { throw new Error('Invalid JSON: ' + e.message); }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Health polling
+// ─────────────────────────────────────────────────────────────────────────────
+async function pollHealth() {
+  try {
+    const data = await apiFetch('/api/health');
+    updateChip('chip-pg',    data.postgres);
+    updateChip('chip-mongo', data.mongo);
+    updateChip('chip-redis', data.redis);
+  } catch { /* server unreachable */ }
+}
+
+function updateChip(id, s) {
+  const chip = $(id);
+  if (!s) return;
+  chip.className = 'status-chip ' + s.status;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Boot
+// ─────────────────────────────────────────────────────────────────────────────
+renderSidebar('pg');
+pollHealth();
+setInterval(pollHealth, 5000);
+</script>
+</body>
+</html>
