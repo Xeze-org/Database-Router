@@ -1,0 +1,30 @@
+{
+  "postgres": {
+    "enabled": "true",
+    "host": "postgres",
+    "port": 5432,
+    "user": "{{ postgres_user }}",
+    "password": "{{ postgres_password }}",
+    "database": "{{ postgres_db }}",
+    "sslmode": "disable"
+  },
+  "mongo": {
+    "enabled": "true",
+    "uri": "mongodb://{{ mongo_user }}:{{ mongo_password }}@mongodb:27017/{{ postgres_db }}?authSource=admin",
+    "database": "{{ postgres_db }}"
+  },
+  "redis": {
+    "enabled": "true",
+    "host": "redis",
+    "port": 6379,
+    "password": "{{ redis_password }}",
+    "db": 0
+  },
+  "tls": {
+    "enabled": false,
+    "cert_file": "",
+    "key_file": "",
+    "ca_file": "",
+    "client_auth": ""
+  }
+}

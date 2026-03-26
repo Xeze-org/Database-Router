@@ -1,0 +1,55 @@
+---
+- name: Install Caddy prerequisites
+  apt:
+    name:
+      - debian-keyring
+      - debian-archive-keyring
+      - apt-transport-https
+      - curl
+    state: present
+
+- name: Add Caddy GPG key
+  ansible.builtin.get_url:
+    url: https://dl.cloudsmith.io/public/caddy/stable/gpg.key
+    dest: /etc/apt/keyrings/caddy.asc
+    mode: "0644"
+
+- name: Add Caddy repository
+  ansible.builtin.apt_repository:
+    repo: >-
+      deb [signed-by=/etc/apt/keyrings/caddy.asc]
+      https://dl.cloudsmith.io/public/caddy/stable/deb/debian
+      any-version main
+    state: present
+    filename: caddy
+
+- name: Install Caddy
+  apt:
+    name: caddy
+    state: present
+    update_cache: true
+
+- name: Deploy Caddyfile
+  template:
+    src: Caddyfile.j2
+    dest: /etc/caddy/Caddyfile
+    mode: "0644"
+    validate: "caddy validate --config %s --adapter caddyfile"
+  notify: reload caddy
+
+- name: Start and enable Caddy
+  systemd:
+    name: caddy
+    state: started
+    enabled: true
+
+- name: Open HTTP/HTTPS in UFW (if active)
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+    proto: tcp
+  loop:
+    - "80"
+    - "443"
+  ignore_errors: true
+

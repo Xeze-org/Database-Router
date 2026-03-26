@@ -14,6 +14,26 @@ type Config struct {
 	Postgres PostgresConfig `json:"postgres"`
 	Mongo    MongoConfig    `json:"mongo"`
 	Redis    RedisConfig    `json:"redis"`
+	TLS      TLSConfig      `json:"tls"`
+}
+
+// TLSConfig controls the gRPC server's transport security.
+//
+// Modes:
+//   - enabled=false            plain-text (development / internal-only)
+//   - enabled=true, ca_file="" server-side TLS only (clients verify server)
+//   - enabled=true, ca_file set mTLS — server also verifies the client's certificate
+//
+// ClientAuth values (mirrors crypto/tls):
+//   - "none"     — no client cert required (default when ca_file is empty)
+//   - "request"  — ask for a cert but don't reject if absent
+//   - "require"  — reject connections without a valid client cert (mTLS)
+type TLSConfig struct {
+	Enabled    bool   `json:"enabled"`
+	CertFile   string `json:"cert_file"`   // server certificate (PEM)
+	KeyFile    string `json:"key_file"`    // server private key (PEM)
+	CAFile     string `json:"ca_file"`     // CA that signed client certs (mTLS)
+	ClientAuth string `json:"client_auth"` // "none" | "request" | "require"
 }
 
 // PostgresConfig holds PostgreSQL connection parameters.
@@ -118,11 +138,36 @@ func overrideFromEnv(cfg *Config) {
 	if v := os.Getenv("REDIS_PASSWORD"); v != "" {
 		cfg.Redis.Password = v
 	}
+
+	// TLS / mTLS
+	if v := os.Getenv("TLS_ENABLED"); v != "" {
+		cfg.TLS.Enabled = v == "true" || v == "1"
+	}
+	if v := os.Getenv("TLS_CERT_FILE"); v != "" {
+		cfg.TLS.CertFile = v
+	}
+	if v := os.Getenv("TLS_KEY_FILE"); v != "" {
+		cfg.TLS.KeyFile = v
+	}
+	if v := os.Getenv("TLS_CA_FILE"); v != "" {
+		cfg.TLS.CAFile = v
+	}
+	if v := os.Getenv("TLS_CLIENT_AUTH"); v != "" {
+		cfg.TLS.ClientAuth = v
+	}
 }
 
 // createDefault writes a config.json with sensible local development defaults.
+// TLS is disabled by default; enable it once you have certificates.
 func createDefault(filename string) {
 	def := Config{
+		TLS: TLSConfig{
+			Enabled:    false,
+			CertFile:   "certs/server.crt",
+			KeyFile:    "certs/server.key",
+			CAFile:     "certs/ca.crt",
+			ClientAuth: "require",
+		},
 		Postgres: PostgresConfig{
 			Enabled:  "true",
 			Host:     "localhost",

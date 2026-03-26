@@ -1,0 +1,13 @@
+# Copy to terraform.tfvars and fill in your values.
+# Passwords are auto-generated — you'll see them after `terraform apply`.
+# When using the deploy container, all of this is handled automatically.
+
+# IMPORTANT: restrict to your IP! Find yours: curl ifconfig.me
+allowed_ips = ["YOUR_IP/32"]
+
+# SSH key already in your DO account (only for manual use; container auto-generates)
+# ssh_key_name = "ayush"
+
+# Domain (must be managed in DO DNS)
+domain    = "0.xeze.org"
+subdomain = "db"
