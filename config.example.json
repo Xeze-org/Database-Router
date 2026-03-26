@@ -1,4 +1,11 @@
 {
+  "tls": {
+    "enabled": false,
+    "cert_file": "certs/server.crt",
+    "key_file": "certs/server.key",
+    "ca_file": "certs/ca.crt",
+    "client_auth": "require"
+  },
   "postgres": {
     "enabled": "true",
     "host": "localhost",

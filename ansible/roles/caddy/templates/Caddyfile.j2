@@ -1,0 +1,49 @@
+# Caddy reverse proxy for db-router
+# Auto-HTTPS via Let's Encrypt for {{ domain }}
+
+# ── Web UI ────────────────────────────────────────────────────────────────
+# https://{{ domain }} → webui on localhost:{{ webui_port }}
+{{ domain }} {
+    tls {{ caddy_email }}
+
+    reverse_proxy localhost:{{ webui_port }}
+
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+
+    log {
+        output file /var/log/caddy/access.log
+        format json
+    }
+}
+
+# ── gRPC ──────────────────────────────────────────────────────────────────
+# https://grpc.{{ domain }} → gRPC on localhost:{{ grpc_port }}
+# Caddy terminates TLS; backend is h2c (plain-text HTTP/2)
+grpc.{{ domain }} {
+{% if enable_mtls | bool %}
+    tls {{ caddy_email }} {
+        client_auth {
+            mode require_and_verify
+            trust_pool file /opt/db-router/certs/ca.crt
+        }
+    }
+{% else %}
+    tls {{ caddy_email }}
+{% endif %}
+
+    reverse_proxy h2c://localhost:{{ grpc_port }} {
+        transport http {
+            versions h2c
+        }
+        flush_interval -1
+    }
+
+    log {
+        output file /var/log/caddy/grpc.log
+        format json
+    }
+}

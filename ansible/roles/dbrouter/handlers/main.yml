@@ -1,0 +1,6 @@
+---
+- name: restart dbrouter
+  community.docker.docker_compose_v2:
+    project_src: /opt/db-router
+    state: present
+    restarted: true

@@ -65,15 +65,23 @@ services:
       dockerfile: Dockerfile
     container_name: unified_db_router
     restart: always
-    # config.json is mounted read-only — credentials never baked into image.
+    # config.json and certs/ are mounted read-only — no credentials baked into the image.
     # Copy config.example.json → config.json and fill in your values.
+    # Run certs/gen-certs.sh (or gen-certs.ps1) to generate TLS certificates first.
     volumes:
       - ./config.json:/app/config.json:ro
+      - ./certs:/app/certs:ro
     environment:
-      PORT: 8080
+      PORT: "50051"
+      # Override TLS settings via env if you prefer not to edit config.json:
+      # TLS_ENABLED: "true"
+      # TLS_CERT_FILE: "certs/server.crt"
+      # TLS_KEY_FILE: "certs/server.key"
+      # TLS_CA_FILE: "certs/ca.crt"
+      # TLS_CLIENT_AUTH: "require"
     ports:
-    # Only expose the API on localhost — your apps call this, not the DBs directly
-    - "127.0.0.1:8081:8080"
+    # Only expose the gRPC API on localhost — your apps call this, not the DBs directly
+    - "127.0.0.1:50051:50051"
     depends_on:
     - postgres
     - mongodb

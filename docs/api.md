@@ -1,195 +1,432 @@
-# API Reference
+# gRPC API Reference
 
-Base URL: `http://localhost:8080` (or your domain behind a reverse proxy)
+The router exposes four gRPC services on port `50051` (default). All service and message definitions live in [`proto/dbrouter.proto`](../proto/dbrouter.proto).
 
-All routes under `/api/v1` require authentication via your reverse proxy (e.g. `X-API-Key` header enforced by Caddy). `/health` is always open.
+**Server reflection is always enabled** — you do not need the `.proto` file locally to call the API.
+
+```bash
+# discover services
+grpcurl -plaintext localhost:50051 list
+
+# discover RPCs inside a service
+grpcurl -plaintext localhost:50051 list dbrouter.PostgresService
+
+# inspect a message type
+grpcurl -plaintext localhost:50051 describe dbrouter.InsertDataRequest
+```
 
 ---
 
-## Health
+## HealthService
 
-| Method | Path | Response |
-|---|---|---|
-| GET | `/health` | `{"status":"healthy","service":"go-db-manager"}` |
+### `Check`
+Returns the connection status of all three backends in one call.
 
----
+```bash
+grpcurl -plaintext localhost:50051 dbrouter.HealthService/Check
+```
 
-## Connection Tests
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/v1/test/all` | Test all configured databases |
-| GET | `/api/v1/test/postgres` | Test PostgreSQL only |
-| GET | `/api/v1/test/mongo` | Test MongoDB only |
-| GET | `/api/v1/test/redis` | Test Redis only |
-
-**Response example**
 ```json
 {
-  "postgres": {"status": "connected"},
-  "mongo":    {"status": "connected"},
-  "redis":    {"status": "connected"}
+  "overallHealthy": true,
+  "postgres": { "status": "connected", "enabled": true, "host": "localhost", "database": "mydb" },
+  "mongo":    { "status": "connected", "enabled": true, "database": "mydb" },
+  "redis":    { "status": "connected", "enabled": true, "host": "localhost", "port": "6379" }
+}
+```
+
+`ConnectionStatus` fields:
+
+| Field | Description |
+|-------|-------------|
+| `status` | `"connected"`, `"disconnected"`, or `"disabled"` |
+| `enabled` | `true` if the backend is configured, `false` if disabled in config |
+| `host` | hostname (Postgres / Redis only) |
+| `port` | port string (Redis only) |
+| `database` | default database name (Postgres / Mongo) |
+| `error` | error message if `status == "disconnected"` |
+
+### `CheckPostgres` / `CheckMongo` / `CheckRedis`
+Same as `Check` but returns a single `ConnectionStatus` for one backend.
+
+```bash
+grpcurl -plaintext localhost:50051 dbrouter.HealthService/CheckPostgres
+```
+
+---
+
+## PostgresService
+
+All RPCs that target a non-default database open a temporary connection for the duration of the call and close it afterwards.
+
+### `ListDatabases`
+
+Lists all non-template databases.
+
+```bash
+grpcurl -plaintext localhost:50051 dbrouter.PostgresService/ListDatabases
+```
+
+```json
+{ "databases": ["postgres", "mydb", "analytics"] }
+```
+
+---
+
+### `CreateDatabase`
+
+Creates a new PostgreSQL database. The name must match `^[a-zA-Z_][a-zA-Z0-9_]*$`.
+
+```bash
+grpcurl -plaintext \
+  -d '{"name":"analytics"}' \
+  localhost:50051 dbrouter.PostgresService/CreateDatabase
+```
+
+```json
+{ "name": "analytics", "message": "Database created successfully" }
+```
+
+> Runs outside any transaction (`CREATE DATABASE` cannot run inside one in PostgreSQL).
+
+---
+
+### `ListTables`
+
+Lists all user tables in the `public` schema of the given database.
+
+```bash
+grpcurl -plaintext -d '{"database":"mydb"}' \
+  localhost:50051 dbrouter.PostgresService/ListTables
+```
+
+```json
+{ "database": "mydb", "tables": ["users", "orders", "products"] }
+```
+
+---
+
+### `ExecuteQuery`
+
+Executes arbitrary SQL. SELECT-like statements return `columns` + `rows`; DML/DDL returns `rows_affected`.
+
+```bash
+# SELECT
+grpcurl -plaintext \
+  -d '{"query":"SELECT id, name FROM users LIMIT 5","database":"mydb"}' \
+  localhost:50051 dbrouter.PostgresService/ExecuteQuery
+```
+
+```json
+{
+  "columns": ["id", "name"],
+  "rows": [
+    {"fields": {"id": {"numberValue": 1}, "name": {"stringValue": "Alice"}}},
+    {"fields": {"id": {"numberValue": 2}, "name": {"stringValue": "Bob"}}}
+  ],
+  "count": "2"
+}
+```
+
+```bash
+# DML
+grpcurl -plaintext \
+  -d '{"query":"UPDATE users SET active = true WHERE id = 1"}' \
+  localhost:50051 dbrouter.PostgresService/ExecuteQuery
+```
+
+```json
+{ "rowsAffected": "1", "message": "Command executed successfully" }
+```
+
+Request fields:
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `query` | yes | SQL statement to execute |
+| `database` | no | Target database; defaults to config `database` |
+
+> **Warning:** This RPC executes arbitrary SQL. Never pass untrusted user input directly.
+
+---
+
+### `SelectData`
+
+Runs `SELECT * FROM <table> LIMIT <limit>` with identifier validation and quoting.
+
+```bash
+grpcurl -plaintext \
+  -d '{"database":"mydb","table":"users","limit":10}' \
+  localhost:50051 dbrouter.PostgresService/SelectData
+```
+
+```json
+{
+  "database": "mydb",
+  "table": "users",
+  "data": [ {"fields": {"id": {"numberValue": 1}, "name": {"stringValue": "Alice"}}} ],
+  "count": "1"
+}
+```
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `database` | yes | Database name |
+| `table` | yes | Table name (alphanumeric + underscore only) |
+| `limit` | no | Max rows (default 100, max 10 000) |
+
+---
+
+### `InsertData`
+
+Inserts a row. If the table has an `id` column the new value is returned.
+
+```bash
+grpcurl -plaintext \
+  -d '{
+    "database": "mydb",
+    "table": "users",
+    "data": {
+      "name":  {"stringValue": "Alice"},
+      "email": {"stringValue": "alice@example.com"}
+    }
+  }' \
+  localhost:50051 dbrouter.PostgresService/InsertData
+```
+
+```json
+{ "database": "mydb", "table": "users", "insertedId": "42" }
+```
+
+The `data` map uses `google.protobuf.Value` — use `stringValue`, `numberValue`, `boolValue`, or `nullValue` keys as appropriate.
+
+---
+
+### `UpdateData`
+
+Updates a row by `id` (`WHERE id = $n`).
+
+```bash
+grpcurl -plaintext \
+  -d '{
+    "database": "mydb",
+    "table": "users",
+    "id": "42",
+    "data": { "name": {"stringValue": "Alicia"} }
+  }' \
+  localhost:50051 dbrouter.PostgresService/UpdateData
+```
+
+```json
+{ "database": "mydb", "table": "users", "id": "42", "rowsAffected": "1" }
+```
+
+---
+
+### `DeleteData`
+
+Deletes a row by `id`.
+
+```bash
+grpcurl -plaintext \
+  -d '{"database":"mydb","table":"users","id":"42"}' \
+  localhost:50051 dbrouter.PostgresService/DeleteData
+```
+
+```json
+{ "database": "mydb", "table": "users", "id": "42", "rowsAffected": "1" }
+```
+
+---
+
+## MongoService
+
+### `ListDatabases`
+
+```bash
+grpcurl -plaintext localhost:50051 dbrouter.MongoService/ListDatabases
+```
+
+```json
+{ "databases": ["admin", "mydb", "logs"] }
+```
+
+---
+
+### `ListCollections`
+
+```bash
+grpcurl -plaintext -d '{"database":"mydb"}' \
+  localhost:50051 dbrouter.MongoService/ListCollections
+```
+
+```json
+{ "database": "mydb", "collections": ["users", "events"] }
+```
+
+---
+
+### `InsertDocument`
+
+Body is a `google.protobuf.Struct` (arbitrary JSON object).
+
+```bash
+grpcurl -plaintext \
+  -d '{
+    "database": "mydb",
+    "collection": "events",
+    "document": { "fields": { "type": {"stringValue": "login"}, "userId": {"numberValue": 1} } }
+  }' \
+  localhost:50051 dbrouter.MongoService/InsertDocument
+```
+
+```json
+{ "database": "mydb", "collection": "events", "insertedId": "65f1a2b3c4d5e6f7a8b9c0d1" }
+```
+
+---
+
+### `FindDocuments`
+
+Returns all documents in a collection (no filter support yet — use `ExecuteQuery` via Postgres for filtered queries).
+
+```bash
+grpcurl -plaintext \
+  -d '{"database":"mydb","collection":"events"}' \
+  localhost:50051 dbrouter.MongoService/FindDocuments
+```
+
+```json
+{
+  "database": "mydb",
+  "collection": "events",
+  "documents": [
+    { "fields": { "_id": {"stringValue": "65f1…"}, "type": {"stringValue": "login"} } }
+  ],
+  "count": "1"
 }
 ```
 
 ---
 
-## PostgreSQL
+### `UpdateDocument`
 
-### List databases
-```
-GET /api/v1/postgres/databases
+Updates a document by ObjectID using `$set`.
+
+```bash
+grpcurl -plaintext \
+  -d '{
+    "database": "mydb",
+    "collection": "events",
+    "id": "65f1a2b3c4d5e6f7a8b9c0d1",
+    "update": { "fields": { "type": {"stringValue": "logout"} } }
+  }' \
+  localhost:50051 dbrouter.MongoService/UpdateDocument
 ```
 
-### List tables
-```
-GET /api/v1/postgres/tables/:database
-```
-
-### Select rows
-```
-GET /api/v1/postgres/select/:database/:table
-```
-Query params:
-| Param | Description |
-|---|---|
-| `limit` | Max rows to return (default: 100) |
-| `offset` | Skip N rows |
-| `where` | SQL WHERE clause fragment, e.g. `id=5` |
-
-### Insert a row
-```
-POST /api/v1/postgres/insert/:database/:table
-```
-Body:
 ```json
-{"name": "Alice", "email": "alice@example.com"}
-```
-Returns `201 Created` on success.
-
-### Update a row
-```
-PUT /api/v1/postgres/update/:database/:table/:id
-```
-Body: fields to update.
-
-### Delete a row
-```
-DELETE /api/v1/postgres/delete/:database/:table/:id
-```
-
-### Raw SQL query
-```
-POST /api/v1/postgres/query
-```
-Body:
-```json
-{
-  "query": "SELECT count(*) FROM users WHERE active = true",
-  "database": "mydb"
-}
-```
-**Fields:**
-- `query` (required): SQL statement to execute
-- `database` (optional): Target database name. If omitted, uses the default database from config.json
-
-**Response:**
-```json
-{
-  "columns": ["count"],
-  "rows": [{"count": 42}],
-  "count": 1
-}
+{ "database": "mydb", "collection": "events", "matchedCount": "1", "modifiedCount": "1" }
 ```
 
 ---
 
-## MongoDB
+### `DeleteDocument`
 
-### List databases
-```
-GET /api/v1/mongo/databases
-```
+Deletes a document by ObjectID.
 
-### List collections
-```
-GET /api/v1/mongo/collections/:database
+```bash
+grpcurl -plaintext \
+  -d '{"database":"mydb","collection":"events","id":"65f1a2b3c4d5e6f7a8b9c0d1"}' \
+  localhost:50051 dbrouter.MongoService/DeleteDocument
 ```
 
-### Insert a document
-```
-POST /api/v1/mongo/insert/:database/:collection
-```
-Body: any JSON object.
-
-### Find documents
-```
-GET /api/v1/mongo/find/:database/:collection
-```
-Query params:
-| Param | Description |
-|---|---|
-| `filter` | JSON filter object, e.g. `{"active":true}` |
-| `limit` | Max documents (default: 100) |
-
-### Update a document
-```
-PUT /api/v1/mongo/update/:database/:collection/:id
-```
-Body: fields to update.
-
-### Delete a document
-```
-DELETE /api/v1/mongo/delete/:database/:collection/:id
+```json
+{ "database": "mydb", "collection": "events", "deletedCount": "1" }
 ```
 
 ---
 
-## Redis
+## RedisService
 
-### List keys
-```
-GET /api/v1/redis/keys?pattern=*
-```
+### `ListKeys`
 
-### Get a value
-```
-GET /api/v1/redis/get/:key
+```bash
+grpcurl -plaintext -d '{"pattern":"session:*"}' \
+  localhost:50051 dbrouter.RedisService/ListKeys
 ```
 
-### Set a value
-```
-POST /api/v1/redis/set
-```
-Body:
 ```json
-{"key": "session:abc", "value": "user:42", "ttl": 3600}
-```
-`ttl` is optional (seconds). Omit for no expiry.
-
-### Delete a key
-```
-DELETE /api/v1/redis/delete/:key
+{ "keys": ["session:abc", "session:xyz"], "count": "2" }
 ```
 
-### Server info
+`pattern` defaults to `*` if omitted.
+
+---
+
+### `SetValue`
+
+```bash
+grpcurl -plaintext \
+  -d '{"key":"session:abc","value":"user:42","ttl":3600}' \
+  localhost:50051 dbrouter.RedisService/SetValue
 ```
-GET /api/v1/redis/info
+
+```json
+{ "key": "session:abc", "value": "user:42", "ttl": 3600 }
+```
+
+`ttl` is in seconds. Set to `0` (or omit) for no expiry.
+
+---
+
+### `GetValue`
+
+```bash
+grpcurl -plaintext -d '{"key":"session:abc"}' \
+  localhost:50051 dbrouter.RedisService/GetValue
+```
+
+```json
+{ "key": "session:abc", "value": "user:42", "ttl": 3540 }
+```
+
+Returns `codes.NotFound` if the key does not exist.
+
+---
+
+### `DeleteKey`
+
+```bash
+grpcurl -plaintext -d '{"key":"session:abc"}' \
+  localhost:50051 dbrouter.RedisService/DeleteKey
+```
+
+```json
+{ "key": "session:abc", "deleted": true }
 ```
 
 ---
 
-## Error responses
+### `Info`
 
-All errors return a JSON object:
-```json
-{"error": "description of what went wrong"}
+Returns raw `INFO` output and the key count for the current database.
+
+```bash
+grpcurl -plaintext localhost:50051 dbrouter.RedisService/Info
 ```
 
-Common status codes:
-| Code | Meaning |
-|---|---|
-| 200 | OK |
-| 201 | Created (insert succeeded) |
-| 400 | Bad request (missing/invalid body) |
-| 500 | Internal error (DB query failed) |
+```json
+{ "dbSize": "42", "info": "# Server\nredis_version:7.2.4\n…" }
+```
+
+---
+
+## Error codes
+
+| gRPC code | Meaning |
+|-----------|---------|
+| `OK` | Success |
+| `INVALID_ARGUMENT` | Bad input (invalid table name, missing field, etc.) |
+| `NOT_FOUND` | Key / document / row not found |
+| `UNAVAILABLE` | Backend not enabled in config, or connection refused |
+| `INTERNAL` | Database driver error |

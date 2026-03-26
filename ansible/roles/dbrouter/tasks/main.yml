@@ -1,0 +1,179 @@
+---
+- name: Install OpenSSL and Git
+  apt:
+    name:
+      - openssl
+      - git
+    state: present
+
+- name: Clone db-router repo
+  git:
+    repo: https://github.com/Xeze-org/Database-Router.git
+    dest: /opt/db-router
+    version: main
+    force: true
+
+- name: Create .env for Docker Compose
+  template:
+    src: env.j2
+    dest: /opt/db-router/.env
+    mode: "0600"
+
+- name: Create config.json for db-router
+  template:
+    src: config.json.j2
+    dest: /opt/db-router/config.json
+    mode: "0600"
+  notify: restart dbrouter
+
+- name: Create certs directory
+  when: enable_mtls | bool
+  file:
+    path: /opt/db-router/certs
+    state: directory
+    mode: "0700"
+
+- name: Generate CA key
+  when: enable_mtls | bool
+  command: openssl genrsa -out /opt/db-router/certs/ca.key 4096
+  args:
+    creates: /opt/db-router/certs/ca.key
+
+- name: Generate CA certificate
+  when: enable_mtls | bool
+  command: >-
+    openssl req -new -x509 -days 3650
+    -key /opt/db-router/certs/ca.key
+    -out /opt/db-router/certs/ca.crt
+    -subj "/CN=db-router-CA/O=db-router/C=US"
+  args:
+    creates: /opt/db-router/certs/ca.crt
+
+- name: Generate server key
+  when: enable_mtls | bool
+  command: openssl genrsa -out /opt/db-router/certs/server.key 4096
+  args:
+    creates: /opt/db-router/certs/server.key
+
+- name: Create server SAN config
+  when: enable_mtls | bool
+  copy:
+    dest: /opt/db-router/certs/server-ext.cnf
+    content: |
+      [req]
+      req_extensions = v3_req
+      [v3_req]
+      subjectAltName = @alt_names
+      [alt_names]
+      DNS.1 = {{ domain }}
+      DNS.2 = grpc.{{ domain }}
+      DNS.3 = localhost
+      IP.1  = 127.0.0.1
+    mode: "0600"
+
+- name: Generate server CSR
+  when: enable_mtls | bool
+  command: >-
+    openssl req -new
+    -key /opt/db-router/certs/server.key
+    -out /opt/db-router/certs/server.csr
+    -subj "/CN={{ domain }}/O=db-router/C=US"
+  args:
+    creates: /opt/db-router/certs/server.csr
+
+- name: Sign server certificate
+  when: enable_mtls | bool
+  command: >-
+    openssl x509 -req -days 3650
+    -in /opt/db-router/certs/server.csr
+    -CA /opt/db-router/certs/ca.crt
+    -CAkey /opt/db-router/certs/ca.key
+    -CAcreateserial
+    -extfile /opt/db-router/certs/server-ext.cnf
+    -extensions v3_req
+    -out /opt/db-router/certs/server.crt
+  args:
+    creates: /opt/db-router/certs/server.crt
+
+- name: Generate client key
+  when: enable_mtls | bool
+  command: openssl genrsa -out /opt/db-router/certs/client.key 4096
+  args:
+    creates: /opt/db-router/certs/client.key
+
+- name: Generate client CSR and sign
+  when: enable_mtls | bool
+  shell: |
+    openssl req -new \
+      -key /opt/db-router/certs/client.key \
+      -out /opt/db-router/certs/client.csr \
+      -subj "/CN=db-router-client/O=db-router/C=US"
+    openssl x509 -req -days 3650 \
+      -in /opt/db-router/certs/client.csr \
+      -CA /opt/db-router/certs/ca.crt \
+      -CAkey /opt/db-router/certs/ca.key \
+      -CAcreateserial \
+      -out /opt/db-router/certs/client.crt
+    rm -f /opt/db-router/certs/server.csr /opt/db-router/certs/client.csr /opt/db-router/certs/server-ext.cnf
+  args:
+    creates: /opt/db-router/certs/client.crt
+
+- name: Lock down private keys
+  when: enable_mtls | bool
+  file:
+    path: "/opt/db-router/certs/{{ item }}"
+    mode: "0600"
+  loop:
+    - ca.key
+    - server.key
+    - client.key
+
+- name: Set cert files readable
+  when: enable_mtls | bool
+  file:
+    path: "/opt/db-router/certs/{{ item }}"
+    mode: "0644"
+  loop:
+    - ca.crt
+    - server.crt
+    - client.crt
+
+- name: Build and start db-router stack
+  community.docker.docker_compose_v2:
+    project_src: /opt/db-router
+    state: present
+    pull: always
+    build: always
+  timeout: 600
+
+- name: Wait for gRPC port (build may take a few minutes on small VMs)
+  wait_for:
+    host: 127.0.0.1
+    port: "{{ grpc_port }}"
+    delay: 10
+    timeout: 300
+  register: grpc_wait
+  ignore_errors: true
+
+- name: Show container status on failure
+  when: grpc_wait is failed
+  shell: |
+    echo "=== docker ps -a ==="
+    docker ps -a
+    echo ""
+    echo "=== db-router logs (last 50 lines) ==="
+    docker logs unified_db_router --tail 50 2>&1 || true
+    echo ""
+    echo "=== postgres logs (last 20 lines) ==="
+    docker logs unified_postgres --tail 20 2>&1 || true
+  register: debug_output
+
+- name: Print debug output
+  when: grpc_wait is failed
+  debug:
+    var: debug_output.stdout_lines
+
+- name: Fail if gRPC port never came up
+  when: grpc_wait is failed
+  fail:
+    msg: "gRPC port {{ grpc_port }} did not come up within 300s. See container logs above."

@@ -1,0 +1,27 @@
+# db-router deployer — one-command infrastructure
+#
+# Usage:
+#   DIGITALOCEAN_TOKEN=dop_v1_xxx docker compose up
+#
+# With your own SSH key:
+#   DIGITALOCEAN_TOKEN=dop_v1_xxx docker compose run --rm -v ~/.ssh:/root/.ssh:ro deploy
+#
+# Destroy:
+#   DIGITALOCEAN_TOKEN=dop_v1_xxx DESTROY=true docker compose up
+
+services:
+  deploy:
+    build:
+      context: ..
+      dockerfile: deployer/Dockerfile
+    environment:
+      - DIGITALOCEAN_TOKEN=${DIGITALOCEAN_TOKEN}
+      - DESTROY=${DESTROY:-false}
+      # Optional overrides (uncomment as needed):
+      # - TF_VAR_domain=0.xeze.org
+      # - TF_VAR_subdomain=db
+      # - TF_VAR_region=blr1
+      # - TF_VAR_ssh_key_name=ayush
+      # - CADDY_EMAIL=admin@example.com
+    volumes:
+      - ./state:/workspace/state

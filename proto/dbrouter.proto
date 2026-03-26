@@ -1,0 +1,278 @@
+syntax = "proto3";
+
+package dbrouter;
+
+option go_package = "db-router/proto/dbrouter";
+
+import "google/protobuf/struct.proto";
+
+// ─── Health ──────────────────────────────────────────────────────────────────
+
+message HealthCheckRequest {}
+
+message ConnectionStatus {
+  string status   = 1;
+  bool   enabled  = 2;
+  string host     = 3;
+  string port     = 4;
+  string database = 5;
+  string error    = 6;
+}
+
+message HealthCheckResponse {
+  bool             overall_healthy = 1;
+  ConnectionStatus postgres        = 2;
+  ConnectionStatus mongo           = 3;
+  ConnectionStatus redis           = 4;
+}
+
+service HealthService {
+  rpc Check        (HealthCheckRequest)       returns (HealthCheckResponse);
+  rpc CheckPostgres(HealthCheckRequest)       returns (ConnectionStatus);
+  rpc CheckMongo   (HealthCheckRequest)       returns (ConnectionStatus);
+  rpc CheckRedis   (HealthCheckRequest)       returns (ConnectionStatus);
+}
+
+// ─── PostgreSQL ──────────────────────────────────────────────────────────────
+
+message ListDatabasesRequest {}
+
+message ListDatabasesResponse {
+  repeated string databases = 1;
+}
+
+message CreateDatabaseRequest {
+  string name = 1;
+}
+
+message CreateDatabaseResponse {
+  string name    = 1;
+  string message = 2;
+}
+
+message ListTablesRequest {
+  string database = 1;
+}
+
+message ListTablesResponse {
+  string          database = 1;
+  repeated string tables   = 2;
+}
+
+message ExecuteQueryRequest {
+  string query    = 1;
+  string database = 2;
+}
+
+message QueryResultRow {
+  map<string, google.protobuf.Value> fields = 1;
+}
+
+message ExecuteQueryResponse {
+  repeated string         columns       = 1;
+  repeated QueryResultRow rows          = 2;
+  int64                   count         = 3;
+  int64                   rows_affected = 4;
+  string                  message       = 5;
+}
+
+message SelectDataRequest {
+  string database = 1;
+  string table    = 2;
+  int32  limit    = 3;
+}
+
+message SelectDataResponse {
+  string                  database = 1;
+  string                  table    = 2;
+  repeated QueryResultRow data     = 3;
+  int64                   count    = 4;
+}
+
+message InsertDataRequest {
+  string                             database = 1;
+  string                             table    = 2;
+  map<string, google.protobuf.Value> data     = 3;
+}
+
+message InsertDataResponse {
+  string database    = 1;
+  string table       = 2;
+  string inserted_id = 3;
+  string message     = 4;
+}
+
+message UpdateDataRequest {
+  string                             database = 1;
+  string                             table    = 2;
+  string                             id       = 3;
+  map<string, google.protobuf.Value> data     = 4;
+}
+
+message UpdateDataResponse {
+  string database      = 1;
+  string table         = 2;
+  string id            = 3;
+  int64  rows_affected = 4;
+}
+
+message DeleteDataRequest {
+  string database = 1;
+  string table    = 2;
+  string id       = 3;
+}
+
+message DeleteDataResponse {
+  string database      = 1;
+  string table         = 2;
+  string id            = 3;
+  int64  rows_affected = 4;
+}
+
+service PostgresService {
+  rpc ListDatabases  (ListDatabasesRequest)  returns (ListDatabasesResponse);
+  rpc CreateDatabase (CreateDatabaseRequest) returns (CreateDatabaseResponse);
+  rpc ListTables     (ListTablesRequest)     returns (ListTablesResponse);
+  rpc ExecuteQuery   (ExecuteQueryRequest)   returns (ExecuteQueryResponse);
+  rpc SelectData     (SelectDataRequest)     returns (SelectDataResponse);
+  rpc InsertData     (InsertDataRequest)     returns (InsertDataResponse);
+  rpc UpdateData     (UpdateDataRequest)     returns (UpdateDataResponse);
+  rpc DeleteData     (DeleteDataRequest)     returns (DeleteDataResponse);
+}
+
+// ─── MongoDB ─────────────────────────────────────────────────────────────────
+
+message ListMongoDatabasesRequest {}
+
+message ListMongoDatabasesResponse {
+  repeated string databases = 1;
+}
+
+message ListCollectionsRequest {
+  string database = 1;
+}
+
+message ListCollectionsResponse {
+  string          database    = 1;
+  repeated string collections = 2;
+}
+
+message InsertDocumentRequest {
+  string                  database   = 1;
+  string                  collection = 2;
+  google.protobuf.Struct  document   = 3;
+}
+
+message InsertDocumentResponse {
+  string database    = 1;
+  string collection  = 2;
+  string inserted_id = 3;
+}
+
+message FindDocumentsRequest {
+  string database   = 1;
+  string collection = 2;
+}
+
+message MongoDocument {
+  map<string, google.protobuf.Value> fields = 1;
+}
+
+message FindDocumentsResponse {
+  string                  database   = 1;
+  string                  collection = 2;
+  repeated MongoDocument  documents  = 3;
+  int64                   count      = 4;
+}
+
+message UpdateDocumentRequest {
+  string                  database   = 1;
+  string                  collection = 2;
+  string                  id         = 3;
+  google.protobuf.Struct  update     = 4;
+}
+
+message UpdateDocumentResponse {
+  string database       = 1;
+  string collection     = 2;
+  int64  matched_count  = 3;
+  int64  modified_count = 4;
+}
+
+message DeleteDocumentRequest {
+  string database   = 1;
+  string collection = 2;
+  string id         = 3;
+}
+
+message DeleteDocumentResponse {
+  string database      = 1;
+  string collection    = 2;
+  int64  deleted_count = 3;
+}
+
+service MongoService {
+  rpc ListDatabases   (ListMongoDatabasesRequest) returns (ListMongoDatabasesResponse);
+  rpc ListCollections (ListCollectionsRequest)     returns (ListCollectionsResponse);
+  rpc InsertDocument  (InsertDocumentRequest)      returns (InsertDocumentResponse);
+  rpc FindDocuments   (FindDocumentsRequest)       returns (FindDocumentsResponse);
+  rpc UpdateDocument  (UpdateDocumentRequest)      returns (UpdateDocumentResponse);
+  rpc DeleteDocument  (DeleteDocumentRequest)      returns (DeleteDocumentResponse);
+}
+
+// ─── Redis ───────────────────────────────────────────────────────────────────
+
+message ListKeysRequest {
+  string pattern = 1;
+}
+
+message ListKeysResponse {
+  repeated string keys  = 1;
+  int64           count = 2;
+}
+
+message SetValueRequest {
+  string key   = 1;
+  string value = 2;
+  int32  ttl   = 3;
+}
+
+message SetValueResponse {
+  string key   = 1;
+  string value = 2;
+  int32  ttl   = 3;
+}
+
+message GetValueRequest {
+  string key = 1;
+}
+
+message GetValueResponse {
+  string key   = 1;
+  string value = 2;
+  int32  ttl   = 3;
+}
+
+message DeleteKeyRequest {
+  string key = 1;
+}
+
+message DeleteKeyResponse {
+  string key     = 1;
+  bool   deleted = 2;
+}
+
+message RedisInfoRequest {}
+
+message RedisInfoResponse {
+  int64  db_size = 1;
+  string info    = 2;
+}
+
+service RedisService {
+  rpc ListKeys  (ListKeysRequest)   returns (ListKeysResponse);
+  rpc SetValue  (SetValueRequest)   returns (SetValueResponse);
+  rpc GetValue  (GetValueRequest)   returns (GetValueResponse);
+  rpc DeleteKey (DeleteKeyRequest)  returns (DeleteKeyResponse);
+  rpc Info      (RedisInfoRequest)  returns (RedisInfoResponse);
+}
