@@ -19,7 +19,3 @@ resource "random_password" "redis" {
   special = false
 }
 
-resource "random_password" "webui" {
-  length  = 20
-  special = false
-}

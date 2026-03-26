@@ -1,33 +1,10 @@
 # Caddy reverse proxy for db-router
 # Auto-HTTPS via Let's Encrypt for {{ domain }}
 
-# ── Web UI ────────────────────────────────────────────────────────────────
-# https://{{ domain }} → webui on localhost:{{ webui_port }}
-{{ domain }} {
-    tls {{ caddy_email }}
-
-    basic_auth {
-        {{ webui_user }} {{ caddy_hash.stdout }}
-    }
-
-    reverse_proxy localhost:{{ webui_port }}
-
-    header {
-        X-Content-Type-Options nosniff
-        X-Frame-Options DENY
-        Referrer-Policy strict-origin-when-cross-origin
-    }
-
-    log {
-        output file /var/log/caddy/access.log
-        format json
-    }
-}
-
-# ── gRPC ──────────────────────────────────────────────────────────────────
-# https://grpc.{{ domain }} → gRPC on localhost:{{ grpc_port }}
+# ── gRPC (mTLS) ──────────────────────────────────────────────────────────
+# https://{{ domain }} → gRPC on localhost:{{ grpc_port }}
 # Caddy terminates TLS; backend is h2c (plain-text HTTP/2)
-grpc.{{ domain }} {
+{{ domain }} {
 {% if enable_mtls | bool %}
     tls {{ caddy_email }} {
         client_auth {
@@ -46,8 +23,14 @@ grpc.{{ domain }} {
         flush_interval -1
     }
 
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+
     log {
-        output file /var/log/caddy/grpc.log
+        output file /var/log/caddy/access.log
         format json
     }
 }

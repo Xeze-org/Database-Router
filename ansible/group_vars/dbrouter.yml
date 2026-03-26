@@ -4,7 +4,6 @@ domain: "db.0.xeze.org"
 
 # ── Ports ──────────────────────────────────────────────────────────────
 grpc_port: 50051
-webui_port: 8080
 
 # ── Database credentials ──────────────────────────────────────────────
 # Override with --extra-vars or ansible-vault
@@ -16,10 +15,6 @@ mongo_user: "admin"
 mongo_password: "CHANGE_ME"
 
 redis_password: "CHANGE_ME"
-
-# ── Web UI basic auth ─────────────────────────────────────────────────
-webui_user: "admin"
-webui_password: "CHANGE_ME"
 
 # ── mTLS ──────────────────────────────────────────────────────────────
 enable_mtls: true

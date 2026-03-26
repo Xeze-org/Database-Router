@@ -3,7 +3,7 @@
 #
 # Deploys the full db-router stack:
 #   1. Docker + Docker Compose
-#   2. db-router (PostgreSQL, MongoDB, Redis, gRPC server, Web UI)
+#   2. db-router (PostgreSQL, MongoDB, Redis, gRPC server)
 #   3. Caddy reverse proxy (auto-HTTPS for domain)
 
 - name: Deploy db-router
