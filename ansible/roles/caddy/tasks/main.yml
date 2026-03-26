@@ -43,7 +43,14 @@
     state: started
     enabled: true
 
-- name: Open HTTP/HTTPS in UFW (if active)
+- name: Check if UFW is installed
+  command: which ufw
+  register: ufw_check
+  changed_when: false
+  failed_when: false
+
+- name: Open HTTP/HTTPS in UFW
+  when: ufw_check.rc == 0
   ufw:
     rule: allow
     port: "{{ item }}"
@@ -51,5 +58,4 @@
   loop:
     - "80"
     - "443"
-  ignore_errors: true
 
