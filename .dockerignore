@@ -29,6 +29,13 @@ redis_data/
 # Docs / tests
 *.md
 *_test.go
+tests/
+examples/
+
+# Infrastructure
+terraform/
+ansible/
+deployer/
 
 # CI
 .github/

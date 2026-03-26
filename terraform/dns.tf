@@ -16,3 +16,11 @@ resource "digitalocean_record" "db_router" {
   value  = digitalocean_droplet.db_router.ipv4_address
   ttl    = 300
 }
+
+resource "digitalocean_record" "grpc" {
+  domain = var.domain
+  type   = "A"
+  name   = "grpc.${var.subdomain}"
+  value  = digitalocean_droplet.db_router.ipv4_address
+  ttl    = 300
+}

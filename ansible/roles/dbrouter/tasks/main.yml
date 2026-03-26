@@ -31,7 +31,7 @@
   file:
     path: /opt/db-router/certs
     state: directory
-    mode: "0700"
+    mode: "0755"
 
 - name: Generate CA key
   when: enable_mtls | bool
@@ -154,6 +154,14 @@
     timeout: 300
   register: grpc_wait
   ignore_errors: true
+
+- name: Wait for WebUI port
+  when: grpc_wait is succeeded
+  wait_for:
+    host: 127.0.0.1
+    port: "{{ webui_port }}"
+    delay: 5
+    timeout: 120
 
 - name: Show container status on failure
   when: grpc_wait is failed
