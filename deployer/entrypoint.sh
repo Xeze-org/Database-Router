@@ -207,7 +207,7 @@ echo -e "${CYAN}╠════════════════════�
 echo -e "${CYAN}║${NC}                                                              ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}  ${BOLD}Endpoints${NC}                                                   ${CYAN}║${NC}"
 
-echo -e "${CYAN}║${NC}    gRPC:     grpc.${FQDN}:443                               ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}    gRPC:     ${FQDN}:443                                    ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}    SSH:      ssh root@${DROPLET_IP}                          ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}                                                              ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}  ${BOLD}Credentials${NC}                                                 ${CYAN}║${NC}"
