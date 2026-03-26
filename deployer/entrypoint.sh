@@ -124,6 +124,7 @@ FQDN=$(echo "$TF_OUT"       | jq -r '.fqdn.value')
 PG_PASS=$(echo "$TF_OUT"    | jq -r '.postgres_password.value')
 MONGO_PASS=$(echo "$TF_OUT"  | jq -r '.mongo_password.value')
 REDIS_PASS=$(echo "$TF_OUT"  | jq -r '.redis_password.value')
+WEBUI_PASS=$(echo "$TF_OUT"  | jq -r '.webui_password.value')
 
 [ "$DROPLET_IP" = "null" ] && die "Failed to get droplet IP from Terraform outputs"
 
@@ -183,6 +184,9 @@ mongo_password: "${MONGO_PASS}"
 
 redis_password: "${REDIS_PASS}"
 
+webui_user: "admin"
+webui_password: "${WEBUI_PASS}"
+
 enable_mtls: ${A_MTLS}
 caddy_email: "${A_CADDY_EMAIL}"
 EOF
@@ -209,6 +213,7 @@ echo -e "${CYAN}║${NC}    gRPC:     grpc.${FQDN}:443                          
 echo -e "${CYAN}║${NC}    SSH:      ssh root@${DROPLET_IP}                          ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}                                                              ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}  ${BOLD}Credentials${NC}                                                 ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}    Web UI:     admin / ${WEBUI_PASS}                         ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}    PostgreSQL: ${A_PG_USER} / ${PG_PASS}                     ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}    MongoDB:    ${A_MONGO_USER} / ${MONGO_PASS}               ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}    Redis:      ${REDIS_PASS}                                 ${CYAN}║${NC}"

@@ -6,6 +6,10 @@
 {{ domain }} {
     tls {{ caddy_email }}
 
+    basic_auth {
+        {{ webui_user }} {{ caddy_hash.stdout }}
+    }
+
     reverse_proxy localhost:{{ webui_port }}
 
     header {

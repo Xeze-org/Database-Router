@@ -1,0 +1,15 @@
+{
+	# Global options can go here
+}
+
+:443 {
+	tls /certs/server.crt /certs/server.key {
+		client_auth {
+			mode require_and_verify
+			trusted_ca_certs /certs/ca.crt
+		}
+	}
+
+	# Proxy gRPC traffic over unencrypted HTTP/2 to db-router
+	reverse_proxy h2c://db-router:50051
+}
