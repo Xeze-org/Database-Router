@@ -78,7 +78,7 @@ services:
     networks:
     - db_network
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:50051/" ]
+      test: ["CMD", "sh", "-c", "echo > /dev/tcp/127.0.0.1/50051"]
       interval: 10s
       timeout: 3s
       retries: 30

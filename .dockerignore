@@ -32,10 +32,5 @@ redis_data/
 tests/
 examples/
 
-# Infrastructure
-terraform/
-ansible/
-deployer/
-
 # CI
 .github/
