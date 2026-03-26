@@ -17,10 +17,7 @@ output "grpc_endpoint" {
   value       = "${var.subdomain}.${var.domain}:${var.grpc_port}"
 }
 
-output "webui_url" {
-  description = "Web UI test panel URL"
-  value       = "https://${var.subdomain}.${var.domain}"
-}
+
 
 output "ssh_command" {
   description = "SSH into the droplet"
@@ -50,11 +47,7 @@ output "redis_password" {
   sensitive   = true
 }
 
-output "webui_password" {
-  description = "Auto-generated Web UI password (basic auth)"
-  value       = random_password.webui.result
-  sensitive   = true
-}
+
 
 ############################################
 # Quick-copy summary (shown at end of apply)
@@ -81,9 +74,7 @@ output "credentials_summary" {
     ║  Redis                                                   ║
     ║    password: ${random_password.redis.result}
     ║                                                          ║
-    ║  Web UI (basic auth)                                     ║
-    ║    user:     admin
-    ║    password: ${random_password.webui.result}
+
     ║                                                          ║
     ╚══════════════════════════════════════════════════════════╝
 

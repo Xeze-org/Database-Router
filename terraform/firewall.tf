@@ -24,7 +24,7 @@ resource "digitalocean_firewall" "db_router_fw" {
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
-  # HTTPS — open (Caddy serves Web UI + gRPC through TLS)
+  # HTTPS — open (Caddy serves gRPC through mTLS)
   inbound_rule {
     protocol         = "tcp"
     port_range       = "443"

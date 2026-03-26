@@ -1,18 +1,13 @@
 # db-router — Terraform (DigitalOcean)
 
-Deploy the full db-router stack (PostgreSQL + MongoDB + Redis + gRPC router + Web UI) on a single DigitalOcean droplet.
+Deploy the full db-router stack (PostgreSQL + MongoDB + Redis + gRPC router) on a single DigitalOcean droplet.
 
 > **Prefer the automated deployer?** See [deployer/](../deployer/) — one `docker run` handles Terraform + Ansible end-to-end with zero manual steps.
 
 ```mermaid
 flowchart LR
     A([Your App]) -->|gRPC :443| C[Caddy]
-    B([Browser]) -->|HTTPS :443| C
-    C --> D[Droplet]
-    D --> P[(PostgreSQL)]
-    D --> M[(MongoDB)]
-    D --> R[(Redis)]
-    D --> G[db-router\ngRPC + WebUI]
+    D --> G[db-router\ngRPC]
 ```
 
 ---
@@ -67,11 +62,12 @@ ssh root@$(terraform output -raw droplet_ip)
 # Check containers
 docker ps
 
-# Test gRPC (via Caddy HTTPS)
-grpcurl grpc.$(terraform output -raw fqdn):443 dbrouter.HealthService/Check
-
-# Open Web UI
-# → https://db.0.xeze.org
+# Test gRPC (via Caddy mTLS)
+grpcurl \
+  -cacert certs/ca.crt \
+  -cert   certs/client.crt \
+  -key    certs/client.key \
+  $(terraform output -raw fqdn):443 dbrouter.HealthService/Check
 ```
 
 ---
@@ -85,10 +81,8 @@ grpcurl grpc.$(terraform output -raw fqdn):443 dbrouter.HealthService/Check
 | **MongoDB** | `mongo:latest` container, port 27017 (localhost only) |
 | **Redis** | `redis:7-alpine` container, port 6379 (localhost only) |
 | **db-router** | gRPC server on `:50051` (internal, fronted by Caddy) |
-| **Web UI** | HTTP test panel on `:8080` (internal, fronted by Caddy) |
-| **Caddy** | Reverse proxy with auto-HTTPS (Let's Encrypt) on ports 80/443 |
-| **Firewall** | SSH restricted to `allowed_ips`; HTTP/HTTPS open for Caddy; gRPC/WebUI direct ports restricted |
-| **DNS** | A record `db.0.xeze.org` → droplet IP |
+| **Caddy** | Reverse proxy with auto-HTTPS (Let's Encrypt) on ports 80/443, enforces mTLS |
+| **Firewall** | SSH restricted to `allowed_ips`; HTTP/HTTPS open for Caddy; gRPC direct port restricted |
 
 ---
 
@@ -107,10 +101,9 @@ grpcurl grpc.$(terraform output -raw fqdn):443 dbrouter.HealthService/Check
 | `postgres_user` | `admin` | PG username |
 | `postgres_db` | `unified_db` | Default PG database |
 | `mongo_user` | `admin` | Mongo username |
-| `allowed_ips` | `["0.0.0.0/0"]` | CIDRs allowed to reach SSH/gRPC/WebUI — **set to your IP!** |
+| `allowed_ips` | `["0.0.0.0/0"]` | CIDRs allowed to reach SSH/gRPC — **set to your IP!** |
 | `grpc_port` | `50051` | gRPC port |
-| `webui_port` | `8080` | Web UI port |
-| `enable_mtls` | `false` | Generate mTLS certs and enable on the gRPC server |
+| `enable_mtls` | `true` | Generate mTLS certs and enable on the gRPC server |
 
 > **Passwords are auto-generated** — no need to set them manually. See Outputs below.
 
@@ -123,12 +116,7 @@ grpcurl grpc.$(terraform output -raw fqdn):443 dbrouter.HealthService/Check
 | `droplet_ip` | no | `139.59.12.34` |
 | `fqdn` | no | `db.0.xeze.org` |
 | `grpc_endpoint` | no | `db.0.xeze.org:50051` |
-| `webui_url` | no | `https://db.0.xeze.org` |
-| `ssh_command` | no | `ssh root@139.59.12.34` |
-| `postgres_password` | **yes** | (auto-generated 24-char) |
-| `mongo_password` | **yes** | (auto-generated 24-char) |
 | `redis_password` | **yes** | (auto-generated 24-char) |
-| `credentials_summary` | **yes** | All credentials in one block |
 
 ### Viewing passwords after deploy
 
@@ -176,7 +164,7 @@ See [docs/mtls-guide.md](../docs/mtls-guide.md) for a full certificate walkthrou
 ## Security hardening (production)
 
 1. **Set `allowed_ips`**: restrict to your IP / office CIDR — `allowed_ips = ["203.0.113.5/32"]`
-2. **Close direct ports**: remove the gRPC/WebUI inbound rules in `firewall.tf` if you only access via Caddy
+2. **Close direct ports**: remove the gRPC inbound rules in `firewall.tf` if you only access via Caddy
 3. **Enable mTLS**: `enable_mtls = true` — only clients with a signed cert can connect
 4. **Remote state**: add a `backend "s3" {}` or DO Spaces backend for team usage
 

@@ -229,7 +229,7 @@ Client examples for connecting from your own apps live in [`examples/`](examples
 
 - [docs/api.md](docs/api.md) — full gRPC service and RPC reference
 - [docs/config.md](docs/config.md) — all config fields and env vars
-- [docs/deployment.md](docs/deployment.md) — Docker, source, reverse proxy, web UI setup
+- [docs/deployment.md](docs/deployment.md) — Docker, source, reverse proxy setup
 - [docs/mtls-guide.md](docs/mtls-guide.md) — certificate generation, per-app certs, Cloudflare setup
 - [terraform/](terraform/) — one-command DigitalOcean deployment (Terraform)
 - [ansible/](ansible/) — server provisioning with Docker, Caddy auto-HTTPS, and mTLS

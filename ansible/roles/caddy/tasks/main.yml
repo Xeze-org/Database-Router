@@ -37,12 +37,6 @@
     group: caddy
     mode: "0755"
 
-- name: Generate bcrypt hash for WebUI password
-  command: caddy hash-password --plaintext "{{ webui_password }}"
-  register: caddy_hash
-  changed_when: false
-  no_log: true
-
 - name: Deploy Caddyfile
   template:
     src: Caddyfile.j2

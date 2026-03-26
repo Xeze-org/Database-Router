@@ -88,7 +88,7 @@ variable "mongo_user" {
 ############################################
 
 variable "allowed_ips" {
-  description = "CIDRs allowed to reach SSH, gRPC, and WebUI. Default is your IP only — never use 0.0.0.0/0 in production."
+  description = "CIDRs allowed to reach SSH and gRPC. Default is your IP only — never use 0.0.0.0/0 in production."
   type        = list(string)
   default     = ["0.0.0.0/0", "::/0"]
 }
@@ -103,11 +103,7 @@ variable "grpc_port" {
   default     = 50051
 }
 
-variable "webui_port" {
-  description = "Web UI HTTP port"
-  type        = number
-  default     = 8080
-}
+
 
 ############################################
 # mTLS

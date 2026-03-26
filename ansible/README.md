@@ -8,9 +8,8 @@ ansible-playbook playbook.yml
 
 ```mermaid
 flowchart LR
-    A([Browser / App]) -->|HTTPS :443| C[Caddy]
+    A([App]) -->|HTTPS :443| C[Caddy]
     C -->|h2c :50051| G[gRPC Router]
-    C -->|HTTP :8080| W[Web UI]
     G --> P[(PostgreSQL)]
     G --> M[(MongoDB)]
     G --> R[(Redis)]
@@ -76,14 +75,12 @@ ansible-playbook playbook.yml
 ### 4. Verify
 
 ```bash
-# Web UI (auto-HTTPS via Caddy)
-curl https://db.0.xeze.org
-
-# gRPC (through Caddy TLS termination)
-grpcurl grpc.db.0.xeze.org:443 dbrouter.HealthService/Check
-
-# Direct gRPC (bypassing Caddy, if firewall allows)
-grpcurl -plaintext db.0.xeze.org:50051 dbrouter.HealthService/Check
+# gRPC (through Caddy mTLS termination)
+grpcurl \
+  -cacert certs/ca.crt \
+  -cert   certs/client.crt \
+  -key    certs/client.key \
+  db.0.xeze.org:443 dbrouter.HealthService/Check
 ```
 
 ---
@@ -108,9 +105,8 @@ grpcurl -plaintext db.0.xeze.org:50051 dbrouter.HealthService/Check
 ### `caddy`
 
 - Installs Caddy from the official Cloudsmith repo
-- Templates a Caddyfile with two sites:
-  - `{{ domain }}` → reverse proxy to Web UI (:8080)
-  - `grpc.{{ domain }}` → reverse proxy h2c to gRPC (:50051)
+- Templates a Caddyfile:
+  - `{{ domain }}` → reverse proxy h2c to gRPC (:50051) with mTLS
 - Caddy auto-obtains Let's Encrypt TLS certificates
 - Validates Caddyfile before reloading
 
@@ -122,7 +118,6 @@ grpcurl -plaintext db.0.xeze.org:50051 dbrouter.HealthService/Check
 |---|---|---|
 | `domain` | `db.0.xeze.org` | Primary domain for the server |
 | `grpc_port` | `50051` | gRPC server port (internal) |
-| `webui_port` | `8080` | Web UI port (internal) |
 | `postgres_user` | `admin` | PostgreSQL username |
 | `postgres_password` | `CHANGE_ME` | PostgreSQL password |
 | `postgres_db` | `unified_db` | Default PostgreSQL database |
@@ -140,8 +135,7 @@ After deployment, Caddy provides automatic HTTPS:
 
 | URL | Backend | Description |
 |---|---|---|
-| `https://db.0.xeze.org` | `localhost:8080` | Web UI test panel |
-| `https://grpc.db.0.xeze.org` | `h2c://localhost:50051` | gRPC (TLS terminated by Caddy) |
+| `https://db.0.xeze.org` | `h2c://localhost:50051` | gRPC (mTLS terminated by Caddy) |
 
 No ports other than 80 and 443 need to be public — Caddy handles everything.
 
