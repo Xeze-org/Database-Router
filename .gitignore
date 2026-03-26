@@ -6,8 +6,8 @@
 *.dylib
 db-manager
 db-manager.exe
-db-router
-db-router.exe
+/db-router
+/db-router.exe
 __pycache__/
 *.pyc
 *.pyo
