@@ -210,29 +210,8 @@ flowchart TD
     srv --> srv4[health_server.go]
     srv --> srv5[convert.go — Row ↔ protobuf]
 
-    root --> webui[cmd/webui/\nHTTP test panel :8080]
     root --> examples[examples/\nclient SDKs & demos]
 ```
-
----
-
-## Web UI Test Panel
-
-A browser-based test panel ships alongside the router. It is a **separate binary** — a pure gRPC client — so the router stays lean and independent.
-
-```bash
-# Windows
-start-webui.bat
-
-# Linux / macOS
-go build -o webui ./cmd/webui
-./webui                       # → http://localhost:8080
-
-# Point at a non-default router address
-GRPC_ADDR=192.168.1.10:50051 ./webui
-```
-
-Features: live health chips, PostgreSQL/MongoDB/Redis tabs, raw SQL query editor, JSON result view with syntax highlighting, copy-to-clipboard.
 
 ---
 

@@ -117,8 +117,6 @@ Every config field can be overridden with an environment variable. Useful for Ku
 | `REDIS_PORT` | `redis.port` |
 | `REDIS_PASSWORD` | `redis.password` |
 | `PORT` | gRPC server port (default `50051`) |
-| `WEBUI_PORT` | Web UI HTTP port (default `8080`) |
-| `GRPC_ADDR` | Web UI → router address (default `localhost:50051`) |
 | `TLS_ENABLED` | `"true"` / `"false"` |
 | `TLS_CERT_FILE` | Path to server cert |
 | `TLS_KEY_FILE` | Path to server key |
