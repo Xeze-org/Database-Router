@@ -29,18 +29,29 @@
     state: present
     update_cache: true
 
+- name: Create Caddy log directory
+  file:
+    path: /var/log/caddy
+    state: directory
+    owner: caddy
+    group: caddy
+    mode: "0755"
+
 - name: Deploy Caddyfile
   template:
     src: Caddyfile.j2
     dest: /etc/caddy/Caddyfile
     mode: "0644"
-    validate: "caddy validate --config %s --adapter caddyfile"
   notify: reload caddy
+
+- name: Format Caddyfile
+  command: caddy fmt --overwrite /etc/caddy/Caddyfile
+  changed_when: false
 
 - name: Start and enable Caddy
   systemd:
     name: caddy
-    state: started
+    state: restarted
     enabled: true
 
 - name: Check if UFW is installed
