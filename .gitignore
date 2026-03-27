@@ -11,12 +11,19 @@ db-manager.exe
 __pycache__/
 *.pyc
 *.pyo
+# Python packaging
+*.egg-info/
+.eggs/
+.venv/
+venv/
 
 # ── Go build / test artifacts ─────────────────────────────────────────────────
 *.test
 *.out
 dist/
 build/
+examples/
+
 
 # ── Go module download cache (never commit — restored by go mod download) ─────
 vendor/
