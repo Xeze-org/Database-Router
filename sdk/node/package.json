@@ -1,0 +1,36 @@
+{
+  "name": "@xeze/dbr",
+  "version": "0.1.0",
+  "description": "Node.js gRPC client for the Xeze Database Router (PostgreSQL, MongoDB, Redis over mTLS)",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "proto/dbrouter.proto",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "grpc",
+    "database",
+    "postgresql",
+    "mongodb",
+    "redis",
+    "mtls",
+    "db-router",
+    "xeze"
+  ],
+  "author": "Xeze <admin@xeze.org>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Xeze-org/Database-Router",
+    "directory": "sdk/node"
+  },
+  "homepage": "https://github.com/Xeze-org/Database-Router/tree/main/sdk/node",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.10.0",
+    "@grpc/proto-loader": "^0.7.0"
+  }
+}
