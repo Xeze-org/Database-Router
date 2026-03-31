@@ -25,7 +25,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Xeze-org/Database-Router",
+    "url": "git+https://github.com/Xeze-org/Database-Router.git",
     "directory": "sdk/node"
   },
   "homepage": "https://github.com/Xeze-org/Database-Router/tree/main/sdk/node",
