@@ -6,7 +6,7 @@ updates:
       interval: "weekly"
 
   - package-ecosystem: "docker"
-    directory: "/"
+    directory: "/local-deploy"
     schedule:
       interval: "weekly"
 
