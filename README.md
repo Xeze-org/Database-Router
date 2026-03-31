@@ -1,269 +1,104 @@
-# database-router
+# Database Router
 
 ![Go version](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Architectures](https://img.shields.io/badge/arch-amd64%20%7C%20arm64-lightgrey)
-![Build](https://img.shields.io/github/actions/workflow/status/Xeze-org/Database-Router/docker-publish.yml?label=docker%20build)
+![Terraform](https://img.shields.io/badge/Terraform-7B42BC?logo=terraform&logoColor=white)
+![Ansible](https://img.shields.io/badge/Ansible-000000?logo=ansible&logoColor=white)
 ![Protocol](https://img.shields.io/badge/protocol-gRPC-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-A lightweight, self-hosted **gRPC** server that exposes a unified interface for PostgreSQL, MongoDB, and Redis. No direct database credentials in your app code.
-
----
-
-## Why gRPC?
-
-| | database-router (gRPC) | REST alternatives |
-|---|---|---|
-| Schema-defined contract | yes (`.proto` file) | no |
-| Strongly typed clients | yes (code-generated) | no |
-| Bi-directional streaming ready | yes | limited |
-| Server reflection (auto-discovery) | yes (`grpcurl`, `grpcui`) | no |
-| Efficient binary encoding | yes (protobuf) | no (JSON) |
+A lightweight, self-hosted **gRPC** server providing a unified interface for PostgreSQL, MongoDB, and Redis. It keeps database credentials out of your application code and routes traffic efficiently and securely.
 
 ---
 
-## How it works
+## 📋 Requirements
+
+Before deploying the Database Router to production, ensure you have the following prerequisites ready:
+
+- **Docker & Docker Compose**: Must be installed on your local system or deployment server.
+- **Domain Name**: You must have a registered domain name (e.g., `example.com`).
+- **Cloud Provider Name Servers**: The name servers for your domain **must** be managed by your cloud provider (e.g., DigitalOcean, Cloudflare). This is required for automatic DNS management and Let's Encrypt / mTLS certificate generation.
+- **Provider API Token**: You must have a valid API token from your cloud provider to allow Terraform and Ansible to automatically provision and configure your infrastructure.
+
+---
+
+## 🚀 Quick Start (Cloud Deployment)
+
+The fastest way to deploy the entire stack to DigitalOcean is using our automated deployer.
+
+**Mac / Linux:**
+```bash
+cd deployer
+DIGITALOCEAN_TOKEN="your_token_here" docker compose up -d
+```
+
+**Windows (PowerShell):**
+```powershell
+cd deployer
+$env:DIGITALOCEAN_TOKEN="your_token_here"; docker compose up -d
+```
+
+---
+
+## 🏗️ Architecture
 
 ```mermaid
-flowchart LR
-    A([Your App]) -->|gRPC + mTLS| P[Envoy / Caddy\nor direct]
-    P --> B[database-router :50051]
-    B --> C[(PostgreSQL)]
-    B --> D[(MongoDB)]
-    B --> E[(Redis)]
-```
+graph LR
+    client("📱 Your App")
+    proxy("🛡️ Caddy Proxy")
+    router("🚦 database-router")
+    
+    subgraph Databases
+        pg("🐘 PostgreSQL")
+        mongo("🍃 MongoDB")
+        redis("⚡ Redis")
+    end
 
-The router exposes four gRPC services — `PostgresService`, `MongoService`, `RedisService`, and `HealthService` — all defined in [`proto/dbrouter.proto`](proto/dbrouter.proto). Server reflection is always enabled so tools can discover services at runtime without the proto file.
+    client -->|gRPC + mTLS| proxy
+    proxy -->|h2c port 50051| router
+    router --> pg
+    router --> mongo
+    router --> redis
 
----
-
-## Quick start
-
-**1. Copy the config template**
-```bash
-cp config.example.json config.json
-# fill in your database host, user, password
-```
-
-**2. Run with Docker**
-```bash
-docker run -d \
-  -p 50051:50051 \
-  -v $(pwd)/config.json:/app/config.json:ro \
-  --name database-router \
-  ghcr.io/xeze-org/database-router:latest
-```
-
-Or with Compose:
-```bash
-docker compose -f deploy/docker-compose.yml up -d
-```
-
-**3. Test it with grpcurl**
-```bash
-# install grpcurl: https://github.com/fullstorydev/grpcurl
-grpcurl -plaintext localhost:50051 list
-grpcurl -plaintext localhost:50051 dbrouter.HealthService/Check
-grpcurl -plaintext localhost:50051 dbrouter.PostgresService/ListDatabases
-```
-
-Or browse interactively with [grpcui](https://github.com/fullstorydev/grpcui):
-```bash
-grpcui -plaintext localhost:50051
+    classDef primary fill:#2563eb,stroke:#1d4ed8,stroke-width:2px,color:#ffffff
+    classDef secondary fill:#475569,stroke:#334155,stroke-width:2px,color:#ffffff
+    classDef database fill:#059669,stroke:#047857,stroke-width:2px,color:#ffffff
+    
+    class client secondary
+    class proxy primary
+    class router primary
+    class pg database
+    class mongo database
+    class redis database
+    
+    style Databases fill:transparent,stroke:#94a3b8,stroke-width:2px
 ```
 
 ---
 
-## Running from source
+## 🛡️ Security & Authentication
 
-**Requirements:** Go 1.24+
+While the core router is lightweight and delegates security to the infrastructure layer, **our automated cloud deployment is production-grade out of the box.**
 
-```bash
-git clone https://github.com/Xeze-org/Database-Router
-cd Database-Router
-
-# Windows
-start.bat
-
-# Linux / macOS
-go mod download
-go build -o database-router ./cmd/
-./database-router
-```
-
-Default port is `50051`. Override with `PORT=9000 ./database-router`.
+The included Terraform and Ansible automation automatically secures your deployment via the provided `Caddyfile`:
+- **Caddy Reverse Proxy**: Serves exclusively over port `443` and safely proxies gRPC traffic over unencrypted HTTP/2 (`h2c://`) directly to the isolated `db-router` container.
+- **Strict mTLS Enforcement**: Uses `require_and_verify` client authentication. Only applications presenting a valid TLS certificate signed by your trusted Certificate Authority (`ca.crt`) are permitted to connect.
+- **Network Isolation**: Cloud firewalls are configured to ensure port `50051` is tightly locked down and never exposed directly to the public internet.
 
 ---
 
-## Configuration
+## 📚 Documentation & Automation
 
-Config is loaded from `config.json` in the working directory.
-**Do not commit this file** — it is in `.gitignore`. Use `config.example.json` as your template.
+Detailed guides and automation playbooks are included in the repository:
 
-See [docs/config.md](docs/config.md) for the full field reference and environment variable overrides.
-
----
-
-## gRPC Services
-
-All four services are documented fully in [docs/api.md](docs/api.md).
-
-| Service | RPCs |
-|---|---|
-| `HealthService` | `Check`, `CheckPostgres`, `CheckMongo`, `CheckRedis` |
-| `PostgresService` | `ListDatabases`, `CreateDatabase`, `ListTables`, `ExecuteQuery`, `SelectData`, `InsertData`, `UpdateData`, `DeleteData` |
-| `MongoService` | `ListDatabases`, `ListCollections`, `InsertDocument`, `FindDocuments`, `UpdateDocument`, `DeleteDocument` |
-| `RedisService` | `ListKeys`, `SetValue`, `GetValue`, `DeleteKey`, `Info` |
+- **[gRPC API Reference](docs/api.md)** — Full RPC definitions for PostgreSQL, MongoDB, and Redis services.
+- **[Configuration](docs/config.md)** — Explanations of all JSON config fields and environment variables.
+- **[mTLS Guide](docs/mtls-guide.md)** — Instructions on certificate generation and mTLS setup.
+- **[Terraform Infrastructure](terraform/)** — One-command cloud infrastructure provisioning.
+- **[Ansible Setup](ansible/)** — Automated server configuration, proxy setup, and mTLS enforcement.
+- **[Deployer](deployer/)** — A fully automated container to deploy everything with a single `docker run` command.
 
 ---
 
-## Example calls
-
-```bash
-ADDR="localhost:50051"
-
-# health check
-grpcurl -plaintext $ADDR dbrouter.HealthService/Check
-
-# list PostgreSQL databases
-grpcurl -plaintext $ADDR dbrouter.PostgresService/ListDatabases
-
-# run a raw SQL query
-grpcurl -plaintext -d '{"query":"SELECT count(*) FROM users","database":"mydb"}' \
-  $ADDR dbrouter.PostgresService/ExecuteQuery
-
-# insert a row
-grpcurl -plaintext \
-  -d '{"database":"mydb","table":"users","data":{"name":{"string_value":"Alice"},"email":{"string_value":"alice@example.com"}}}' \
-  $ADDR dbrouter.PostgresService/InsertData
-
-# Redis set with TTL
-grpcurl -plaintext \
-  -d '{"key":"session:abc","value":"user:42","ttl":3600}' \
-  $ADDR dbrouter.RedisService/SetValue
-
-# find all MongoDB documents in a collection
-grpcurl -plaintext \
-  -d '{"database":"mydb","collection":"events"}' \
-  $ADDR dbrouter.MongoService/FindDocuments
-```
-
----
-
-## Authentication
-
-`database-router` has **no built-in authentication**. All traffic reaching port 50051 is trusted.
-
-Protect it by:
-- Binding to `127.0.0.1` only and using an application-level secret in your gRPC metadata
-- Running behind Envoy Proxy with an ext-authz filter or JWT validation
-- Using mTLS so only clients with a trusted certificate can connect
-
-> Never expose port 50051 directly to the internet without authentication.
-
----
-
-## Security
-
-> **This router is designed for internal networks and trusted microservice environments only.**
-
-Key risks:
-
-- **Raw SQL RPC** — `PostgresService.ExecuteQuery` executes arbitrary SQL. Never pass user-supplied input directly. Use it for internal tooling only.
-- **No built-in auth** — If port 50051 is reachable without protection every database operation is unauthenticated.
-- **Credentials** — `config.json` holds database passwords in plaintext. Use `0600` permissions, never commit it, and prefer environment variable overrides in CI/CD.
-
-**Recommended deployment:**
-```
-Client → Envoy (mTLS + auth) → database-router (localhost:50051)
-```
-
----
-
-## Project structure
-
-```mermaid
-flowchart TD
-    root[database-router/]
-    root --> cmd[cmd/main.go\ngRPC server entrypoint]
-    root --> proto[proto/\ndbrouter.proto + generated Go]
-    root --> internal[internal/]
-    root --> deploy[deploy/docker-compose.yml]
-    root --> dockerfile[Dockerfile]
-    root --> config[config.example.json]
-
-    internal --> cfg[config/config.go\nLoad + env overrides]
-    internal --> db[db/database.go\nPG pool, Mongo, Redis]
-    internal --> svc[service/\nbusiness logic interfaces]
-    internal --> srv[server/\ngRPC server implementations]
-    internal --> wh[webhandler/\nHTTP → gRPC client adapters]
-
-    svc --> svc1[service.go — interfaces]
-    svc --> svc2[postgres.go]
-    svc --> svc3[mongo.go]
-    svc --> svc4[redis.go]
-    svc --> svc5[health.go]
-
-    srv --> srv1[postgres_server.go]
-    srv --> srv2[mongo_server.go]
-    srv --> srv3[redis_server.go]
-    srv --> srv4[health_server.go]
-    srv --> srv5[convert.go — Row ↔ protobuf]
-
-    root --> examples[examples/\nclient SDKs & demos]
-```
-
----
-
-## Examples
-
-Client examples for connecting from your own apps live in [`examples/`](examples/):
-
-| Language | Path | Description |
-|---|---|---|
-| Python | [`examples/python/`](examples/python/) | Flask app + `DbRouterClient` class calling the HTTP proxy |
-
----
-
-## Docs
-
-- [docs/api.md](docs/api.md) — full gRPC service and RPC reference
-- [docs/config.md](docs/config.md) — all config fields and env vars
-- [docs/deployment.md](docs/deployment.md) — Docker, source, reverse proxy setup
-- [docs/mtls-guide.md](docs/mtls-guide.md) — certificate generation, per-app certs, Cloudflare setup
-- [terraform/](terraform/) — one-command DigitalOcean deployment (Terraform)
-- [ansible/](ansible/) — server provisioning with Docker, Caddy auto-HTTPS, and mTLS
-- [deployer/](deployer/) — fully automated container: one `docker run` deploys everything (Terraform + Ansible)
-
----
-
-## Regenerating protobuf code
-
-If you modify `proto/dbrouter.proto`, regenerate the Go bindings:
-
-```bash
-# Prerequisites: protoc, protoc-gen-go, protoc-gen-go-grpc
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-
-protoc --proto_path=proto \
-  --go_out=proto/dbrouter --go_opt=module=db-router/proto/dbrouter \
-  --go-grpc_out=proto/dbrouter --go-grpc_opt=module=db-router/proto/dbrouter \
-  proto/dbrouter.proto
-```
-
----
-
-## Docker image
-
-The image contains **zero credentials**. Config is always supplied at runtime via a volume mount.
-
-Build and push is **manual only** — go to **Actions → Build & Publish Docker Image → Run workflow**.
-
-**Architectures:** `linux/amd64`, `linux/arm64`
-
----
-
-## License
+## 📄 License
 
 MIT
