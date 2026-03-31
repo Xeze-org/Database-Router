@@ -8,12 +8,16 @@ on:
         required: true
         type: string
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   publish:
     name: 🚀 Build & Publish
     runs-on: ubuntu-latest
     
     permissions:
+      id-token: write
       contents: write
 
     steps:
@@ -46,11 +50,10 @@ jobs:
         working-directory: sdk/node
         run: npm ci || npm install
 
-      - name: 🚀 Publish to npm
+      - name: 🚀 Publish to npm (Trusted Publishing with Provenance)
         working-directory: sdk/node
-        run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public --provenance
+        # No NODE_AUTH_TOKEN needed! The id-token permission enables OIDC automatically.
 
       - name: 🏷️ Create Git tag
         run: |
