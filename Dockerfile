@@ -19,7 +19,7 @@ FROM alpine:3.19
 LABEL org.opencontainers.image.title="db-router" \
       org.opencontainers.image.description="Unified gRPC router for PostgreSQL, MongoDB and Redis" \
       org.opencontainers.image.source="https://github.com/xeze/db-router" \
-      org.opencontainers.image.licenses="MIT"
+      org.opencontainers.image.licenses="Apache-2.0"
 
 WORKDIR /app
 

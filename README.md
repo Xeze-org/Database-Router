@@ -5,7 +5,7 @@
 ![Terraform](https://img.shields.io/badge/Terraform-7B42BC?logo=terraform&logoColor=white)
 ![Ansible](https://img.shields.io/badge/Ansible-000000?logo=ansible&logoColor=white)
 ![Protocol](https://img.shields.io/badge/protocol-gRPC-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 
 A lightweight, self-hosted **gRPC** server providing a unified interface for PostgreSQL, MongoDB, and Redis. It keeps database credentials out of your application code and routes traffic efficiently and securely.
 
@@ -147,4 +147,4 @@ Detailed guides and automation playbooks are included in the repository:
 
 ## 📄 License
 
-MIT
+Apache 2.0
