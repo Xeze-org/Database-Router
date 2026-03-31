@@ -98,4 +98,4 @@ client = connect(host="localhost:50051", insecure=True)
 
 ## License
 
-MIT
+Apache 2.0

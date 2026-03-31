@@ -91,4 +91,4 @@ const client = connect({ host: "localhost:50051", insecure: true });
 
 ## License
 
-MIT
+Apache 2.0
