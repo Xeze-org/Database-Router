@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xeze-dbr-core"
+version = "0.1.0"
+description = "Official unified database wrapper for the Xeze infrastructure."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+authors = [
+    { name = "Xeze", email = "dev@xeze.org" }
+]
+keywords = ["xeze", "database", "grpc", "postgres", "mongodb", "redis", "vault"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "hvac>=1.1.0",
+    "grpcio>=1.50.0",
+    "protobuf>=4.21.0",
+    "xeze-dbr",
+]
+
+[project.urls]
+Homepage = "https://code.xeze.org/xeze/xeze-dbr-core"
+Repository = "https://code.xeze.org/xeze/xeze-dbr-core"
+"Bug Tracker" = "https://code.xeze.org/xeze/xeze-dbr-core/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
