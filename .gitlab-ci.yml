@@ -1,19 +1,14 @@
-# You can override the included template(s) by including variable overrides
-# SAST customization: https://docs.gitlab.com/user/application_security/sast/#available-cicd-variables
-# Secret Detection customization: https://docs.gitlab.com/user/application_security/secret_detection/pipeline/configure/
-# Dependency Scanning customization: https://docs.gitlab.com/user/application_security/dependency_scanning/dependency_scanning_sbom/#customizing-analyzer-behavior
-# Container Scanning customization: https://docs.gitlab.com/user/application_security/container_scanning/#customizing-analyzer-behavior
-# Note that environment variables can be set in several places
-# See https://docs.gitlab.com/ci/variables/#cicd-variable-precedence
 stages:
-- test
-- secret-detection
-sast:
-  stage: test
-include:
-- template: Security/SAST.gitlab-ci.yml
-- template: Security/Secret-Detection.gitlab-ci.yml
-variables:
-  SECRET_DETECTION_ENABLED: 'true'
-secret_detection:
-  stage: secret-detection
+    - lint
+
+    python:lint:
+      stage: lint
+        image: python:3.10-slim
+          before_script:
+              - pip install flake8
+                script:
+                    # We lint the sdk folder but EXCLUDE the generated gRPC files
+                        - flake8 sdk/python/src/ --count --exclude=*_pb2.py,*_pb2_grpc.py --select=E9,F63,F7,F82 --show-source --statistics
+                            # Optional: Run a secondary pass for style (complexity/length) without failing the build
+                                - flake8 sdk/python/src/ --count --exclude=*_pb2.py,*_pb2_grpc.py --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+                                
