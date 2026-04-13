@@ -1,14 +1,11 @@
 stages:
-    - lint
+  - lint
 
-    python:lint:
-      stage: lint
-        image: python:3.10-slim
-          before_script:
-              - pip install flake8
-                script:
-                    # We lint the sdk folder but EXCLUDE the generated gRPC files
-                        - flake8 sdk/python/src/ --count --exclude=*_pb2.py,*_pb2_grpc.py --select=E9,F63,F7,F82 --show-source --statistics
-                            # Optional: Run a secondary pass for style (complexity/length) without failing the build
-                                - flake8 sdk/python/src/ --count --exclude=*_pb2.py,*_pb2_grpc.py --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-                                
+python:lint:
+  stage: lint
+  image: python:3.10-slim
+  before_script:
+    - pip install flake8
+  script:
+    - flake8 sdk/python/src/ --count --exclude=*_pb2.py,*_pb2_grpc.py --select=E9,F63,F7,F82 --show-source --statistics
+    - flake8 sdk/python/src/ --count --exclude=*_pb2.py,*_pb2_grpc.py --exit-zero --max-complexity=10 --max-line-length=127 --statistics
