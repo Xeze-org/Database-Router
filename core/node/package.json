@@ -1,0 +1,33 @@
+{
+  "name": "@xeze/dbr-core",
+  "version": "0.1.0",
+  "description": "High-level Vault-integrated database client for Node.js apps on Xeze infrastructure",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "xeze",
+    "database",
+    "grpc",
+    "vault",
+    "postgresql",
+    "mongodb",
+    "redis"
+  ],
+  "author": "Xeze <dev@xeze.org>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://code.xeze.org/xeze/Database-Router.git",
+    "directory": "core/node"
+  },
+  "dependencies": {
+    "@xeze/dbr": "^0.1.0",
+    "node-vault": "^0.10.2"
+  }
+}
