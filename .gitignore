@@ -140,3 +140,6 @@ desktop.ini
 *.prof
 coverage.out
 coverage.html
+
+# ── Examples ──────────────────────────────────────────────────────────────────
+examples/python-mtls-test/
