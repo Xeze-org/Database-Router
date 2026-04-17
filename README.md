@@ -30,7 +30,7 @@ A lightweight, self-hosted **gRPC** server providing a unified interface for Pos
 
 ## 🔌 Client Libraries
 
-We provide two tiers of client libraries across **5 languages**:
+We provide two tiers of client libraries across **6 languages**:
 
 ### SDK — Low-Level gRPC Clients
 
@@ -43,6 +43,7 @@ Direct access to all gRPC service stubs. You manage certificate loading and data
 | **Rust** | [`xeze-dbr`](https://crates.io/crates/xeze-dbr) | `cargo add xeze-dbr` |
 | **Go** | `code.xeze.org/xeze/Database-Router/sdk/go` | `go get code.xeze.org/xeze/Database-Router/sdk/go` |
 | **Java** | `org.xeze.dbr / xeze-dbr` | `<dependency> ... </dependency>` |
+| **Zig (Exp)** | `xeze-dbr` | `build.zig.zon` deps |
 
 ### Core — High-Level Vault Wrappers
 
@@ -55,6 +56,7 @@ One-line setup with automatic Vault mTLS auth and database-per-service isolation
 | **Rust** | [`xeze-dbr-core`](https://crates.io/crates/xeze-dbr-core) | `cargo add xeze-dbr-core` |
 | **Go** | `code.xeze.org/xeze/Database-Router/core/go` | `go get code.xeze.org/xeze/Database-Router/core/go` |
 | **Java** | `org.xeze.dbr.core / xeze-dbr-core` | `<dependency> ... </dependency>` |
+| **Zig (Exp)** | `xeze-dbr-core` | `build.zig.zon` deps |
 
 ### SDK vs Core — Which One?
 
