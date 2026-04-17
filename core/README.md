@@ -14,7 +14,7 @@ Each implementation provides the same developer experience:
 | **Python** | [`python/`](./python/) | [`xeze-dbr-core`](https://pypi.org/project/xeze-dbr-core/) | `pip install xeze-dbr-core` |
 | **Node.js** | [`node/`](./node/) | `@xeze/dbr-core` | `npm install @xeze/dbr-core` |
 | **Go** | [`go/`](./go/) | `code.xeze.org/xeze/Database-Router/core/go` | `go get code.xeze.org/xeze/Database-Router/core/go` |
-| **Rust** | [`rust/`](./rust/) | [`xeze-dbr-core`](https://crates.io/crates/xeze-dbr) | via git dependency |
+| **Rust** | [`rust/`](./rust/) | [`xeze-dbr-core`](https://crates.io/crates/xeze-dbr-core) | `cargo add xeze-dbr-core` |
 
 ## SDK vs Core
 
