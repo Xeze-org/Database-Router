@@ -30,7 +30,7 @@ A lightweight, self-hosted **gRPC** server providing a unified interface for Pos
 
 ## 🔌 Client Libraries
 
-We provide two tiers of client libraries across **4 languages**:
+We provide two tiers of client libraries across **5 languages**:
 
 ### SDK — Low-Level gRPC Clients
 
@@ -42,6 +42,7 @@ Direct access to all gRPC service stubs. You manage certificate loading and data
 | **Node.js** | [`@xeze/dbr`](https://www.npmjs.com/package/@xeze/dbr) | `npm install @xeze/dbr` |
 | **Rust** | [`xeze-dbr`](https://crates.io/crates/xeze-dbr) | `cargo add xeze-dbr` |
 | **Go** | `code.xeze.org/xeze/Database-Router/sdk/go` | `go get code.xeze.org/xeze/Database-Router/sdk/go` |
+| **Java** | `org.xeze.dbr / xeze-dbr` | `<dependency> ... </dependency>` |
 
 ### Core — High-Level Vault Wrappers
 
@@ -53,6 +54,7 @@ One-line setup with automatic Vault mTLS auth and database-per-service isolation
 | **Node.js** | [`@xeze/dbr-core`](https://www.npmjs.com/package/@xeze/dbr-core) | `npm install @xeze/dbr-core` |
 | **Rust** | [`xeze-dbr-core`](https://crates.io/crates/xeze-dbr-core) | `cargo add xeze-dbr-core` |
 | **Go** | `code.xeze.org/xeze/Database-Router/core/go` | `go get code.xeze.org/xeze/Database-Router/core/go` |
+| **Java** | `org.xeze.dbr.core / xeze-dbr-core` | `<dependency> ... </dependency>` |
 
 ### SDK vs Core — Which One?
 
