@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBR Core Test — Xeze Infrastructure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0b0d14;
+            --surface: #12151f;
+            --surface-alt: #181c2a;
+            --border: rgba(255,255,255,0.06);
+            --text: #e4e6ef;
+            --text-muted: #7a7f96;
+            --accent-pg: #6c5ce7;
+            --accent-pg-glow: rgba(108,92,231,0.25);
+            --accent-mongo: #00b894;
+            --accent-mongo-glow: rgba(0,184,148,0.25);
+            --accent-redis: #e17055;
+            --accent-redis-glow: rgba(225,112,85,0.25);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Animated background ─────────────────── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 600px 400px at 20% 10%, var(--accent-pg-glow), transparent),
+                radial-gradient(ellipse 500px 350px at 80% 30%, var(--accent-mongo-glow), transparent),
+                radial-gradient(ellipse 400px 300px at 50% 80%, var(--accent-redis-glow), transparent);
+            z-index: 0;
+            pointer-events: none;
+            animation: bgShift 12s ease-in-out infinite alternate;
+        }
+        @keyframes bgShift {
+            0%   { opacity: 0.5; }
+            100% { opacity: 0.8; }
+        }
+
+        /* ── Header ──────────────────────────────── */
+        .header {
+            position: relative; z-index: 1;
+            text-align: center;
+            padding: 48px 24px 24px;
+        }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6c5ce7, #00b894, #e17055);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            color: var(--text-muted);
+            margin-top: 8px;
+            font-size: 0.95rem;
+        }
+        .health-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 14px;
+            padding: 6px 16px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border-radius: 999px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            transition: all 0.3s;
+        }
+        .health-badge.ok { color: #00b894; border-color: rgba(0,184,148,0.3); }
+        .health-badge.fail { color: #e17055; border-color: rgba(225,112,85,0.3); }
+        .health-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+        /* ── Layout ──────────────────────────────── */
+        .grid {
+            position: relative; z-index: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+            max-width: 1280px;
+            margin: 24px auto;
+            padding: 0 24px 48px;
+        }
+
+        /* ── Card ────────────────────────────────── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: transform 0.25s, box-shadow 0.25s;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px -8px rgba(0,0,0,0.4);
+        }
+        .card-head {
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .card-icon {
+            width: 42px; height: 42px;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+        .card-head h2 { font-size: 1.05rem; font-weight: 700; }
+        .card-head p { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+        .card-body { padding: 24px; }
+
+        /* ── Database-specific colors ────────────── */
+        .pg .card-icon  { background: var(--accent-pg-glow); color: var(--accent-pg); }
+        .pg .card-head  { background: linear-gradient(90deg, rgba(108,92,231,0.08), transparent); }
+        .mongo .card-icon { background: var(--accent-mongo-glow); color: var(--accent-mongo); }
+        .mongo .card-head { background: linear-gradient(90deg, rgba(0,184,148,0.08), transparent); }
+        .redis .card-icon { background: var(--accent-redis-glow); color: var(--accent-redis); }
+        .redis .card-head { background: linear-gradient(90deg, rgba(225,112,85,0.08), transparent); }
+
+        /* ── Form elements ───────────────────────── */
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+        input:focus, select:focus { border-color: rgba(255,255,255,0.15); }
+        input::placeholder { color: var(--text-muted); }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* ── Buttons ─────────────────────────────── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn-pg    { background: var(--accent-pg); color: #fff; }
+        .btn-pg:hover { background: #5a4bd4; box-shadow: 0 4px 20px var(--accent-pg-glow); }
+        .btn-mongo { background: var(--accent-mongo); color: #fff; }
+        .btn-mongo:hover { background: #00a382; box-shadow: 0 4px 20px var(--accent-mongo-glow); }
+        .btn-redis { background: var(--accent-redis); color: #fff; }
+        .btn-redis:hover { background: #d05a3e; box-shadow: 0 4px 20px var(--accent-redis-glow); }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+        .btn-outline:hover { border-color: rgba(255,255,255,0.2); color: var(--text); }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 6px; }
+        .btn-group .btn { flex: 1; }
+
+        /* ── Result display ──────────────────────── */
+        .result {
+            margin-top: 16px;
+            padding: 14px 16px;
+            background: var(--surface-alt);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            max-height: 220px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            transition: all 0.3s;
+        }
+        .result.success { border-color: rgba(0,184,148,0.3); color: #00b894; }
+        .result.error   { border-color: rgba(225,112,85,0.3); color: #e17055; }
+
+        /* ── Table ────────────────────────────────── */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 0.82rem;
+        }
+        .data-table th {
+            text-align: left;
+            padding: 8px 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr { transition: background 0.15s; }
+        .data-table tr:hover { background: rgba(255,255,255,0.02); }
+        .data-table .empty-row td { color: var(--text-muted); text-align: center; font-style: italic; }
+
+        /* ── Scrollbar ────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+        /* ── Responsive ──────────────────────────── */
+        @media (max-width: 480px) {
+            .grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .header h1 { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>⚡ DBR Core Test</h1>
+        <p>Unified Postgres · MongoDB · Redis through <code>xeze-dbr-core</code></p>
+        <div class="health-badge" id="healthBadge">
+            <span class="health-dot"></span>
+            <span id="healthText">Checking...</span>
+        </div>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="grid">
+
+        <!-- ═══ POSTGRESQL CARD ═══ -->
+        <div class="card pg">
+            <div class="card-head">
+                <div class="card-icon">PG</div>
+                <div>
+                    <h2>PostgreSQL</h2>
+                    <p>Relational — Contacts Table</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" id="pgName" placeholder="Ayush Sharma">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="text" id="pgEmail" placeholder="ayush@xeze.org">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="pgRole">
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                        <option value="viewer">Viewer</option>
+                    </select>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-pg" onclick="pgInsert()">Insert Contact</button>
+                    <button class="btn btn-outline" onclick="pgList()">Fetch All</button>
+                </div>
+                <div class="result" id="pgResult">Ready to test PostgreSQL...</div>
+                <table class="data-table" id="pgTable" style="display:none;">
+                    <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th></tr></thead>
+                    <tbody id="pgTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══ MONGODB CARD ═══ -->
+        <div class="card mongo">
+            <div class="card-head">
+                <div class="card-icon">MG</div>
+                <div>
+                    <h2>MongoDB</h2>
+                    <p>Document Store — Audit Logs</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label>Action</label>
+                    <input type="text" id="mongoAction" placeholder="user_login">
+                </div>
+                <div class="form-group">
+                    <label>Detail</label>
+                    <input type="text" id="mongoDetail" placeholder="User logged in from 192.168.1.1">
+                </div>
+                <button class="btn btn-mongo" onclick="mongoInsert()">Insert Audit Log</button>
+                <div class="result" id="mongoResult">Ready to test MongoDB...</div>
+            </div>
+        </div>
+
+        <!-- ═══ REDIS CARD ═══ -->
+        <div class="card redis">
+            <div class="card-head">
+                <div class="card-icon">RD</div>
+                <div>
+                    <h2>Redis</h2>
+                    <p>Key-Value Cache</p>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Key</label>
+                        <input type="text" id="redisKey" placeholder="session:token">
+                    </div>
+                    <div class="form-group">
+                        <label>Value</label>
+                        <input type="text" id="redisValue" placeholder="abc123xyz">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>TTL (seconds)</label>
+                    <input type="number" id="redisTTL" value="3600" min="1">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-redis" onclick="redisSet()">SET Key</button>
+                    <button class="btn btn-outline" onclick="redisGet()">GET Key</button>
+                </div>
+                <div class="result" id="redisResult">Ready to test Redis...</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ── Helpers ─────────────────────────────────────────────────────
+        function setResult(id, text, type = '') {
+            const el = document.getElementById(id);
+            el.textContent = text;
+            el.className = 'result' + (type ? ' ' + type : '');
+        }
+
+        async function api(method, url, body) {
+            const opts = { method, headers: { 'Content-Type': 'application/json' } };
+            if (body) opts.body = JSON.stringify(body);
+            const res = await fetch(url, opts);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Request failed');
+            return data;
+        }
+
+        // ── Health Check ────────────────────────────────────────────────
+        async function checkHealth() {
+            try {
+                const data = await api('GET', '/api/health');
+                const badge = document.getElementById('healthBadge');
+                const text = document.getElementById('healthText');
+                badge.classList.add('ok');
+                badge.classList.remove('fail');
+                text.textContent = `Connected — ns: ${data.namespace}`;
+            } catch {
+                const badge = document.getElementById('healthBadge');
+                const text = document.getElementById('healthText');
+                badge.classList.add('fail');
+                badge.classList.remove('ok');
+                text.textContent = 'Connection failed';
+            }
+        }
+        checkHealth();
+
+        // ── PostgreSQL ──────────────────────────────────────────────────
+        async function pgInsert() {
+            const name = document.getElementById('pgName').value.trim();
+            const email = document.getElementById('pgEmail').value.trim();
+            const role = document.getElementById('pgRole').value;
+            if (!name || !email) return setResult('pgResult', '⚠ Name and email are required.', 'error');
+            try {
+                const data = await api('POST', '/api/pg/contacts', { name, email, role });
+                setResult('pgResult', `✅ ${data.message} (ID: ${data.id})`, 'success');
+                document.getElementById('pgName').value = '';
+                document.getElementById('pgEmail').value = '';
+                pgList();
+            } catch (e) {
+                setResult('pgResult', `❌ ${e.message}`, 'error');
+            }
+        }
+
+        async function pgList() {
+            try {
+                const rows = await api('GET', '/api/pg/contacts');
+                const tbody = document.getElementById('pgTableBody');
+                const table = document.getElementById('pgTable');
+                if (rows.length === 0) {
+                    table.style.display = 'table';
+                    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No contacts yet</td></tr>';
+                    setResult('pgResult', 'ℹ Table is empty.', '');
+                    return;
+                }
+                table.style.display = 'table';
+                tbody.innerHTML = rows.map(r =>
+                    `<tr><td>${r.id}</td><td>${r.name}</td><td>${r.email}</td><td>${r.role}</td></tr>`
+                ).join('');
+                setResult('pgResult', `✅ Fetched ${rows.length} contact(s).`, 'success');
+            } catch (e) {
+                setResult('pgResult', `❌ ${e.message}`, 'error');
+            }
+        }
+
+        // ── MongoDB ─────────────────────────────────────────────────────
+        async function mongoInsert() {
+            const action = document.getElementById('mongoAction').value.trim();
+            const detail = document.getElementById('mongoDetail').value.trim();
+            if (!action) return setResult('mongoResult', '⚠ Action is required.', 'error');
+            try {
+                const data = await api('POST', '/api/mongo/logs', { action, detail });
+                setResult('mongoResult', `✅ ${data.message} (ID: ${data.id})`, 'success');
+                document.getElementById('mongoAction').value = '';
+                document.getElementById('mongoDetail').value = '';
+            } catch (e) {
+                setResult('mongoResult', `❌ ${e.message}`, 'error');
+            }
+        }
+
+        // ── Redis ───────────────────────────────────────────────────────
+        async function redisSet() {
+            const key = document.getElementById('redisKey').value.trim();
+            const value = document.getElementById('redisValue').value.trim();
+            const ttl = parseInt(document.getElementById('redisTTL').value) || 3600;
+            if (!key || !value) return setResult('redisResult', '⚠ Key and value are required.', 'error');
+            try {
+                const data = await api('POST', '/api/redis/cache', { key, value, ttl });
+                setResult('redisResult', `✅ ${data.message}`, 'success');
+            } catch (e) {
+                setResult('redisResult', `❌ ${e.message}`, 'error');
+            }
+        }
+
+        async function redisGet() {
+            const key = document.getElementById('redisKey').value.trim();
+            if (!key) return setResult('redisResult', '⚠ Enter a key to fetch.', 'error');
+            try {
+                const data = await api('GET', `/api/redis/cache?key=${encodeURIComponent(key)}`);
+                if (data.found) {
+                    setResult('redisResult', `✅ "${data.key}" → "${data.value}"`, 'success');
+                } else {
+                    setResult('redisResult', `ℹ Key "${data.key}" not found (expired or never set).`, '');
+                }
+            } catch (e) {
+                setResult('redisResult', `❌ ${e.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

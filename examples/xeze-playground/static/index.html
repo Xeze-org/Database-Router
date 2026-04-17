@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xeze Shoutboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #080a10;
+            --surface: #0f1219;
+            --surface-2: #161a25;
+            --surface-3: #1c2130;
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.14);
+            --text: #e8eaf0;
+            --text-muted: #6b7290;
+            --text-dim: #3d4261;
+            --purple: #7c6cf8;
+            --purple-glow: rgba(124,108,248,0.2);
+            --green: #00d4a0;
+            --orange: #ff7043;
+            --pink: #f06292;
+            --yellow: #ffd54f;
+            --radius: 18px;
+            --radius-sm: 12px;
+            --radius-xs: 8px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Ambient glow ──────────────────────────────── */
+        .ambient {
+            position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        .ambient::before {
+            content: '';
+            position: absolute;
+            width: 700px; height: 700px;
+            top: -200px; left: 50%; transform: translateX(-50%);
+            background: radial-gradient(circle, rgba(124,108,248,0.12) 0%, transparent 70%);
+            animation: ambientPulse 8s ease-in-out infinite;
+        }
+        .ambient::after {
+            content: '';
+            position: absolute;
+            width: 400px; height: 400px;
+            bottom: 10%; right: 5%;
+            background: radial-gradient(circle, rgba(0,212,160,0.08) 0%, transparent 70%);
+            animation: ambientPulse 12s ease-in-out infinite reverse;
+        }
+        @keyframes ambientPulse {
+            0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+            50%       { opacity: 1;   transform: translateX(-50%) scale(1.1); }
+        }
+
+        /* ── Layout ────────────────────────────────────── */
+        .app { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; padding: 0 16px 80px; }
+
+        /* ── Header ────────────────────────────────────── */
+        header {
+            text-align: center;
+            padding: 40px 0 28px;
+        }
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+        .logo-icon {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, #7c6cf8, #00d4a0);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+        .logo-text {
+            background: linear-gradient(135deg, #a29bfe, #00d4a0);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .tagline { color: var(--text-muted); font-size: 0.85rem; margin-top: 8px; }
+
+        /* Stats bar */
+        .stats-bar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .stat-chip {
+            display: flex; align-items: center; gap: 6px;
+            padding: 5px 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+        .stat-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: blink 2s ease-in-out infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .stat-chip b { color: var(--text); }
+
+        /* Sort tabs */
+        .sort-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 8px 18px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 0.83rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab:hover { border-color: var(--border-hover); color: var(--text); }
+        .tab.active { background: var(--purple); border-color: var(--purple); color: #fff; }
+
+        /* ── Composer ──────────────────────────────────── */
+        .composer {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 24px;
+            transition: border-color 0.2s;
+        }
+        .composer:focus-within { border-color: var(--purple); }
+        .composer-top {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .composer-avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1rem;
+            flex-shrink: 0;
+            background: var(--purple);
+            color: #fff;
+            transition: background 0.3s;
+        }
+        .composer-inputs { flex: 1; }
+        .name-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            outline: none;
+            margin-bottom: 8px;
+        }
+        .name-input::placeholder { color: var(--text-dim); }
+        .message-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            min-height: 60px;
+        }
+        .message-input::placeholder { color: var(--text-muted); }
+        .composer-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+        .char-count { font-size: 0.78rem; color: var(--text-dim); }
+        .char-count.warn { color: var(--orange); }
+        .post-btn {
+            padding: 8px 22px;
+            background: var(--purple);
+            color: #fff;
+            border: none;
+            border-radius: 999px;
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .post-btn:hover { background: #6a5ce0; transform: translateY(-1px); box-shadow: 0 4px 20px var(--purple-glow); }
+        .post-btn:active { transform: translateY(0); }
+        .post-btn:disabled { opacity: 0.4; cursor: default; transform: none; box-shadow: none; }
+
+        /* ── Feed ──────────────────────────────────────── */
+        #feed { display: flex; flex-direction: column; gap: 14px; }
+
+        /* ── Post card ─────────────────────────────────── */
+        .post-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            transition: all 0.25s;
+            animation: slideIn 0.35s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .post-card:hover {
+            border-color: var(--border-hover);
+            background: var(--surface-2);
+        }
+        .post-head {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .avatar {
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 0.9rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .post-meta { flex: 1; }
+        .post-author { font-weight: 700; font-size: 0.92rem; }
+        .post-time { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+        .post-views {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            display: flex; align-items: center; gap: 4px;
+        }
+        .post-message {
+            font-size: 0.95rem;
+            line-height: 1.65;
+            color: var(--text);
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+        .post-footer {
+            display: flex;
+            gap: 6px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .react-btn {
+            display: flex; align-items: center; gap: 5px;
+            padding: 5px 12px;
+            background: var(--surface-3);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            font-family: inherit;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .react-btn:hover {
+            background: var(--surface-2);
+            border-color: var(--border-hover);
+            color: var(--text);
+            transform: translateY(-1px);
+        }
+        .react-btn.active {
+            background: rgba(124,108,248,0.15);
+            border-color: rgba(124,108,248,0.4);
+            color: #a29bfe;
+        }
+        .react-btn span { font-size: 0.78rem; font-weight: 600; }
+
+        /* trending badge */
+        .trending-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px;
+            background: rgba(255,212,79,0.1);
+            border: 1px solid rgba(255,212,79,0.25);
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--yellow);
+            margin-left: auto;
+        }
+
+        /* ── Empty / loading states ────────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state .big-emoji { font-size: 3rem; margin-bottom: 16px; }
+        .empty-state p { font-size: 0.9rem; }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+        @keyframes shimmer { 0%{ background-position: 200% 0} 100%{ background-position:-200% 0} }
+        .skel-card { height: 120px; border-radius: var(--radius); margin-bottom: 14px; }
+
+        /* ── Toast ─────────────────────────────────────── */
+        #toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+            background: #2d3250; border: 1px solid var(--border-hover);
+            border-radius: 999px; padding: 10px 22px;
+            font-size: 0.85rem; font-weight: 600;
+            opacity: 0; transition: all 0.35s cubic-bezier(0.34,1.56,0.64,1);
+            z-index: 100; white-space: nowrap;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        /* ── Scrollbar ─────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+        @media (max-width: 480px) {
+            .post-footer { gap: 4px; }
+            .react-btn { padding: 5px 9px; font-size: 0.78rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="ambient"></div>
+
+<div class="app">
+    <!-- Header -->
+    <header>
+        <div class="logo">
+            <div class="logo-icon">⚡</div>
+            <span class="logo-text">Xeze Shoutboard</span>
+        </div>
+        <p class="tagline">A fun board powered by Postgres · MongoDB · Redis</p>
+        <div class="stats-bar">
+            <div class="stat-chip">
+                <span class="stat-dot"></span>
+                <span>Live — <b id="totalPosts">...</b> shouts</span>
+            </div>
+            <div class="stat-chip">🟣 <b>Postgres</b> posts</div>
+            <div class="stat-chip">🟢 <b>Mongo</b> activity</div>
+            <div class="stat-chip">🔴 <b>Redis</b> views & reactions</div>
+        </div>
+    </header>
+
+    <!-- Composer -->
+    <div class="composer" id="composer">
+        <div class="composer-top">
+            <div class="composer-avatar" id="composerAvatar">?</div>
+            <div class="composer-inputs">
+                <input class="name-input" id="authorInput" placeholder="Your name..." maxlength="64"
+                       autocomplete="off" spellcheck="false">
+                <textarea class="message-input" id="messageInput"
+                          placeholder="Shout something out... 👋" maxlength="500" rows="2"></textarea>
+            </div>
+        </div>
+        <div class="composer-bottom">
+            <span class="char-count" id="charCount">0 / 500</span>
+            <button class="post-btn" id="postBtn" onclick="submitPost()">Shout!</button>
+        </div>
+    </div>
+
+    <!-- Sort tabs -->
+    <div class="sort-tabs">
+        <button class="tab active" id="tabRecent" onclick="setSort('recent')">🕐 Recent</button>
+        <button class="tab" id="tabTrending" onclick="setSort('trending')">🔥 Trending</button>
+    </div>
+
+    <!-- Feed -->
+    <div id="feed">
+        <div class="skel-card skeleton"></div>
+        <div class="skel-card skeleton"></div>
+        <div class="skel-card skeleton"></div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+    const REACTIONS = {
+        like: '👍', fire: '🔥', heart: '❤️', rocket: '🚀', clap: '👏'
+    };
+
+    let currentSort = 'recent';
+    let posts = [];
+    let reacted = {}; // track which reactions this session
+
+    // ── Author avatar init ──────────────────────────────
+    const savedName = localStorage.getItem('shout_name') || '';
+    document.getElementById('authorInput').value = savedName;
+    updateAvatar(savedName);
+
+    document.getElementById('authorInput').addEventListener('input', (e) => {
+        const name = e.target.value;
+        localStorage.setItem('shout_name', name);
+        updateAvatar(name);
+    });
+
+    document.getElementById('messageInput').addEventListener('input', (e) => {
+        const len = e.target.value.length;
+        const el = document.getElementById('charCount');
+        el.textContent = `${len} / 500`;
+        el.className = 'char-count' + (len > 420 ? ' warn' : '');
+    });
+
+    // Auto-expand textarea
+    document.getElementById('messageInput').addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = this.scrollHeight + 'px';
+    });
+
+    // Submit on Ctrl+Enter
+    document.getElementById('messageInput').addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') submitPost();
+    });
+
+    function updateAvatar(name) {
+        const el = document.getElementById('composerAvatar');
+        const letter = name.trim() ? name.trim()[0].toUpperCase() : '?';
+        el.textContent = letter;
+        el.style.background = nameToColor(name);
+    }
+
+    function nameToColor(name) {
+        const colors = ['#7c6cf8','#00d4a0','#ff7043','#0984e3','#f06292','#ffd54f','#55efc4','#a29bfe'];
+        if (!name.trim()) return '#4a5568';
+        let h = 0;
+        for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+        return colors[Math.abs(h) % colors.length];
+    }
+
+    // ── API calls ───────────────────────────────────────
+    async function api(method, url, body) {
+        const opts = { method, headers: { 'Content-Type': 'application/json' } };
+        if (body) opts.body = JSON.stringify(body);
+        const res = await fetch(url, opts);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Request failed');
+        return data;
+    }
+
+    async function loadPosts() {
+        try {
+            const data = await api('GET', `/api/posts?sort=${currentSort}`);
+            posts = data;
+            renderPosts();
+        } catch (e) {
+            document.getElementById('feed').innerHTML =
+                `<div class="empty-state"><div class="big-emoji">⚠️</div><p>${e.message}</p></div>`;
+        }
+    }
+
+    async function loadStats() {
+        try {
+            const data = await api('GET', '/api/stats');
+            document.getElementById('totalPosts').textContent = data.total_posts;
+        } catch {}
+    }
+
+    async function submitPost() {
+        const author = document.getElementById('authorInput').value.trim() || 'Anonymous';
+        const message = document.getElementById('messageInput').value.trim();
+        if (!message) return showToast('Write something first!');
+
+        const btn = document.getElementById('postBtn');
+        btn.disabled = true;
+        btn.textContent = 'Posting...';
+
+        try {
+            await api('POST', '/api/posts', { author, message });
+            document.getElementById('messageInput').value = '';
+            document.getElementById('messageInput').style.height = 'auto';
+            document.getElementById('charCount').textContent = '0 / 500';
+            showToast('Shouted! 🎉');
+            await loadPosts();
+            await loadStats();
+        } catch (e) {
+            showToast(e.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Shout!';
+        }
+    }
+
+    async function react(postId, reaction) {
+        const key = `${postId}:${reaction}`;
+        if (reacted[key]) { showToast('Already reacted!'); return; }
+        reacted[key] = true;
+
+        try {
+            const data = await api('POST', `/api/posts/${postId}/react`, { reaction });
+            // Update UI inline
+            const btn = document.querySelector(`[data-post="${postId}"][data-reaction="${reaction}"]`);
+            if (btn) {
+                btn.classList.add('active');
+                btn.querySelector('span').textContent = data.reactions[reaction];
+            }
+        } catch (e) {
+            showToast(e.message);
+        }
+    }
+
+    async function trackView(postId) {
+        try {
+            const data = await api('POST', `/api/posts/${postId}/view`, {});
+            const el = document.querySelector(`[data-views="${postId}"]`);
+            if (el) el.textContent = `${data.views} views`;
+        } catch {}
+    }
+
+    // ── Render ──────────────────────────────────────────
+    function renderPosts() {
+        const feed = document.getElementById('feed');
+        if (!posts.length) {
+            feed.innerHTML = `<div class="empty-state">
+                <div class="big-emoji">👋</div>
+                <p>No shouts yet. Be the first!</p>
+            </div>`;
+            return;
+        }
+
+        feed.innerHTML = posts.map(p => {
+            const letter = p.author ? p.author[0].toUpperCase() : '?';
+            const time = formatTime(p.created_at);
+            const isTrending = p.trending_score > 5;
+
+            const reactBtns = Object.entries(REACTIONS).map(([key, emoji]) => {
+                const count = p.reactions[key] || 0;
+                const isReacted = reacted[`${p.id}:${key}`] ? 'active' : '';
+                return `<button class="react-btn ${isReacted}"
+                    data-post="${p.id}" data-reaction="${key}"
+                    onclick="react(${p.id}, '${key}')">
+                    ${emoji} <span>${count}</span>
+                </button>`;
+            }).join('');
+
+            return `<div class="post-card" onmouseenter="trackView(${p.id})">
+                <div class="post-head">
+                    <div class="avatar" style="background:${p.avatar_color}">${letter}</div>
+                    <div class="post-meta">
+                        <div class="post-author">${escapeHtml(p.author)}</div>
+                        <div class="post-time">${time}</div>
+                    </div>
+                    <div class="post-views" data-views="${p.id}">${p.views} views</div>
+                    ${isTrending ? '<div class="trending-badge">🔥 Trending</div>' : ''}
+                </div>
+                <div class="post-message">${escapeHtml(p.message)}</div>
+                <div class="post-footer">${reactBtns}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function setSort(sort) {
+        currentSort = sort;
+        document.getElementById('tabRecent').className = 'tab' + (sort === 'recent' ? ' active' : '');
+        document.getElementById('tabTrending').className = 'tab' + (sort === 'trending' ? ' active' : '');
+        loadPosts();
+    }
+
+    function formatTime(ts) {
+        if (!ts) return '';
+        const d = new Date(ts);
+        const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+        if (diff < 60)    return 'just now';
+        if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+        return d.toLocaleDateString();
+    }
+
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ── Toast ────────────────────────────────────────────
+    let toastTimer;
+    function showToast(msg) {
+        const el = document.getElementById('toast');
+        el.textContent = msg;
+        el.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+    }
+
+    // ── Init & polling ────────────────────────────────────
+    loadPosts();
+    loadStats();
+    // Auto-refresh every 15 seconds
+    setInterval(() => { loadPosts(); loadStats(); }, 15000);
+</script>
+</body>
+</html>
