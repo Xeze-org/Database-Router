@@ -26,6 +26,73 @@ A lightweight, self-hosted **gRPC** server providing a unified interface for Pos
 - **Backend Engineers:** Reduce boilerplate code with typed gRPC clients.
 - **DevOps Teams:** Automate infrastructure and reduce manual setup.
 
+---
+
+## 🔌 Client Libraries
+
+We provide two tiers of client libraries across **4 languages**:
+
+### SDK — Low-Level gRPC Clients
+
+Direct access to all gRPC service stubs. You manage certificate loading and database targeting yourself.
+
+| Language | Package | Install |
+|----------|---------|---------|
+| **Python** | [`xeze-dbr`](https://pypi.org/project/xeze-dbr/) | `pip install xeze-dbr` |
+| **Node.js** | [`@xeze/dbr`](https://www.npmjs.com/package/@xeze/dbr) | `npm install @xeze/dbr` |
+| **Rust** | [`xeze-dbr`](https://crates.io/crates/xeze-dbr) | `cargo add xeze-dbr` |
+| **Go** | `code.xeze.org/xeze/Database-Router/sdk/go` | `go get code.xeze.org/xeze/Database-Router/sdk/go` |
+
+### Core — High-Level Vault Wrappers
+
+One-line setup with automatic Vault mTLS auth and database-per-service isolation via `app_namespace`. This is what most developers should use.
+
+| Language | Package | Install |
+|----------|---------|---------|
+| **Python** | [`xeze-dbr-core`](https://pypi.org/project/xeze-dbr-core/) | `pip install xeze-dbr-core` |
+| **Node.js** | [`@xeze/dbr-core`](https://www.npmjs.com/package/@xeze/dbr-core) | `npm install @xeze/dbr-core` |
+| **Rust** | [`xeze-dbr-core`](https://crates.io/crates/xeze-dbr-core) | `cargo add xeze-dbr-core` |
+| **Go** | `code.xeze.org/xeze/Database-Router/core/go` | `go get code.xeze.org/xeze/Database-Router/core/go` |
+
+### SDK vs Core — Which One?
+
+| | SDK (`sdk/`) | Core (`core/`) |
+|---|---|---|
+| **Level** | Low-level gRPC stubs | High-level abstraction |
+| **Auth** | Manual cert loading | Automatic via HashiCorp Vault |
+| **Isolation** | None — raw access | Enforced namespace per service |
+| **Data format** | Protobuf messages | Native language types (dicts, maps, objects) |
+| **Use case** | Custom tooling, infra scripts | Application development |
+
+### Quick Example (Core — Python)
+
+```python
+from xeze_core import XezeCoreClient
+
+db = XezeCoreClient(app_namespace="myapp")
+db.init_workspace()
+
+# Postgres — native Python dicts
+db.pg_insert("users", {"name": "Ayush", "role": "admin"})
+rows = db.pg_query("SELECT * FROM users")
+
+# MongoDB
+db.mongo_insert("logs", {"action": "user_created"})
+
+# Redis
+db.redis_set("session:abc", "user_123", ttl=300)
+val = db.redis_get("session:abc")  # "user_123"
+```
+
+### 🔐 Certificate Management
+
+Our SDKs provide native dual-support for establishing secure mTLS connections:
+
+1. **Dynamic Secrets Management (Recommended):** Fetch certificates dynamically from **HashiCorp Vault** at runtime. Private keys remain strictly in memory — never written to disk.
+2. **Static Certificate Files:** Standard support for loading `.crt` and `.key` files from your application's file system.
+
+---
+
 ## 📋 Requirements
 
 Before deploying the Database Router to production, ensure you have the following prerequisites ready:
@@ -54,33 +121,6 @@ DIGITALOCEAN_TOKEN="your_token_here" docker compose up -d
 cd deployer
 $env:DIGITALOCEAN_TOKEN="your_token_here"; docker compose up -d
 ```
-
----
-
-## 🔌 Database Router SDKs (Backend Connection)
-
-Connect your applications securely to the router using our official gRPC clients:
-
-**Python:**
-
-```bash
-pip install xeze-dbr
-```
-
-**Node.js:**
-
-```bash
-npm i @xeze/dbr
-```
-
-*More language support upcoming!*
-
-### 🔐 Certificate Management
-
-Our official SDKs provide native dual-support for establishing your secure mTLS connections:
-
-1. **Dynamic Secrets Management (Recommended):** Fetch certificates dynamically from centralized systems like **HashiCorp Vault** directly at runtime. Private keys remain strictly in memory and are never written to disk, avoiding local credential leakage.
-2. **Static Certificate Files:** Standard support for loading standard `.crt` and `.key` paths directly from your application's file system or orchestrated secrets mounts.
 
 ---
 
@@ -116,6 +156,33 @@ graph LR
     class redis database
   
     style Databases fill:transparent,stroke:#94a3b8,stroke-width:2px
+```
+
+---
+
+## 📂 Project Structure
+
+```
+Database-Router/
+├── cmd/              # Go server entrypoint
+├── internal/         # Core router logic (Go)
+├── proto/            # Protobuf definitions (source of truth)
+├── sdk/              # Low-level gRPC client libraries
+│   ├── python/       #   pip install xeze-dbr
+│   ├── node/         #   npm install @xeze/dbr
+│   ├── rust/         #   cargo add xeze-dbr
+│   └── go/           #   go get .../sdk/go
+├── core/             # High-level Vault-integrated wrappers
+│   ├── python/       #   pip install xeze-dbr-core
+│   ├── node/         #   npm install @xeze/dbr-core
+│   ├── rust/         #   cargo add xeze-dbr-core
+│   └── go/           #   go get .../core/go
+├── examples/         # Demo apps and playground
+├── deployer/         # One-command cloud deployer
+├── terraform/        # Infrastructure provisioning
+├── ansible/          # Server configuration automation
+├── certs/            # TLS certificate generation scripts
+└── docs/             # API reference and guides
 ```
 
 ---
