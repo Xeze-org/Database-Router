@@ -1,0 +1,16 @@
+.{
+    .name = "xeze-dbr",
+    .version = "0.1.0",
+    .dependencies = .{
+        .protobuf = .{
+            .url = "https://github.com/Arwalk/zig-protobuf/archive/refs/tags/v0.3.0.tar.gz",
+            .hash = "1220c3ebd2d8be0293da27ff5f8afebaebe4eb5b14f82637213ee8638b7ed66348ef",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "README.md",
+    },
+}

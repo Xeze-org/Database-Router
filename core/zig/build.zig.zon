@@ -1,0 +1,15 @@
+.{
+    .name = "xeze-dbr-core",
+    .version = "0.1.0",
+    .dependencies = .{
+        .@"xeze-dbr" = .{
+            .path = "../../sdk/zig",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+        "README.md",
+    },
+}

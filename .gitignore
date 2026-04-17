@@ -48,6 +48,10 @@ buildNumber.properties
 .mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
 
+# ── Zig ───────────────────────────────────────────────────────────────────────
+zig-cache/
+zig-out/
+
 # ── Go build / test artifacts ─────────────────────────────────────────────────
 *.test
 *.out
