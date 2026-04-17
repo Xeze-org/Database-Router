@@ -2,12 +2,12 @@
 
 High-level, Vault-integrated database client for Rust applications on Xeze infrastructure.
 
+[![crates.io](https://img.shields.io/crates/v/xeze-dbr-core.svg)](https://crates.io/crates/xeze-dbr-core)
+
 ## Installation
 
-```toml
-[dependencies]
-xeze-dbr-core = { git = "https://code.xeze.org/xeze/Database-Router", subdirectory = "core/rust" }
-tokio = { version = "1", features = ["full"] }
+```bash
+cargo add xeze-dbr-core
 ```
 
 ## Quick Start
