@@ -1,0 +1,17 @@
+[package]
+name = "xeze-dbr-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["Xeze <dev@xeze.org>"]
+description = "High-level Vault-integrated database client for Rust apps on Xeze infrastructure"
+license = "Apache-2.0"
+repository = "https://code.xeze.org/xeze/Database-Router"
+
+[dependencies]
+xeze-dbr = { path = "../../sdk/rust" }
+tokio = { version = "1", features = ["full"] }
+tonic = "0.12"
+prost = "0.13"
+reqwest = { version = "0.12", features = ["json"], default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
