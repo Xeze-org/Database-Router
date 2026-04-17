@@ -33,7 +33,17 @@ die()  { echo -e "${RED}[error]${NC} $*" >&2; exit 1; }
 
 banner
 
-[ -z "${DIGITALOCEAN_TOKEN:-}" ] && die "DIGITALOCEAN_TOKEN is not set. Pass it with -e DIGITALOCEAN_TOKEN=..."
+if [ -n "${DIGITALOCEAN_TOKEN:-}" ]; then
+  PROVIDER="digital-ocean"
+  log "Provider selected: DigitalOcean"
+elif [ -n "${HCLOUD_TOKEN:-}" ]; then
+  PROVIDER="hetzner"
+  log "Provider selected: Hetzner Cloud"
+else
+  die "No cloud provider token found. Set DIGITALOCEAN_TOKEN or HCLOUD_TOKEN."
+fi
+
+TF_DIR="/workspace/terraform/$PROVIDER"
 
 mkdir -p "$STATE_DIR"
 
@@ -74,10 +84,10 @@ fi
 
 if [ -n "$PUB_KEY_CONTENT" ] && [ -z "${TF_VAR_ssh_key_name:-}" ]; then
   export TF_VAR_ssh_public_key="$PUB_KEY_CONTENT"
-  log "SSH mode: upload public key to DigitalOcean"
+  log "SSH mode: upload public key to cloud provider"
 else
   export TF_VAR_ssh_public_key=""
-  log "SSH mode: lookup existing key '${TF_VAR_ssh_key_name}' in DigitalOcean"
+  log "SSH mode: lookup existing key '${TF_VAR_ssh_key_name}' in cloud provider"
 fi
 
 # ── 2. Auto-detect public IP for firewall ────────────────────────────────────
@@ -119,30 +129,35 @@ log "Extracting Terraform outputs..."
 
 TF_OUT=$(terraform output -json -state="$TF_STATE")
 
-DROPLET_IP=$(echo "$TF_OUT"  | jq -r '.droplet_ip.value')
+if [ "$PROVIDER" = "digital-ocean" ]; then
+  SERVER_IP=$(echo "$TF_OUT" | jq -r '.droplet_ip.value')
+else
+  SERVER_IP=$(echo "$TF_OUT" | jq -r '.server_ip.value')
+fi
+
 FQDN=$(echo "$TF_OUT"       | jq -r '.fqdn.value')
 PG_PASS=$(echo "$TF_OUT"    | jq -r '.postgres_password.value')
 MONGO_PASS=$(echo "$TF_OUT"  | jq -r '.mongo_password.value')
 REDIS_PASS=$(echo "$TF_OUT"  | jq -r '.redis_password.value')
 
-[ "$DROPLET_IP" = "null" ] && die "Failed to get droplet IP from Terraform outputs"
+[ "$SERVER_IP" = "null" ] && die "Failed to get server IP from Terraform outputs"
 
-log "Droplet IP: $DROPLET_IP"
+log "Server IP:  $SERVER_IP"
 log "FQDN:       $FQDN"
 
 # ── 5. Wait for SSH to be ready ──────────────────────────────────────────────
 
-log "Waiting for SSH on $DROPLET_IP..."
+log "Waiting for SSH on $SERVER_IP..."
 
 SSH_OPTS="-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -o LogLevel=ERROR"
 
 for i in $(seq 1 30); do
-  if ssh $SSH_OPTS -i "$PRIVATE_KEY" root@"$DROPLET_IP" "echo ok" >/dev/null 2>&1; then
+  if ssh $SSH_OPTS -i "$PRIVATE_KEY" root@"$SERVER_IP" "echo ok" >/dev/null 2>&1; then
     log "SSH is ready."
     break
   fi
   if [ "$i" -eq 30 ]; then
-    die "SSH timed out after 150s. Check that the droplet is running and the SSH key is correct."
+    die "SSH timed out after 150s. Check that the server is running and the SSH key is correct."
   fi
   sleep 5
 done
@@ -153,7 +168,7 @@ log "Generating Ansible inventory and variables..."
 
 cat > "$ANSIBLE_DIR/inventory.ini" <<EOF
 [dbrouter]
-${DROPLET_IP} ansible_user=root ansible_ssh_private_key_file=${PRIVATE_KEY} ansible_ssh_common_args='${SSH_OPTS}'
+${SERVER_IP} ansible_user=root ansible_ssh_private_key_file=${PRIVATE_KEY} ansible_ssh_common_args='${SSH_OPTS}'
 
 [dbrouter:vars]
 ansible_python_interpreter=/usr/bin/python3
@@ -208,7 +223,7 @@ echo -e "${CYAN}║${NC}                                                        
 echo -e "${CYAN}║${NC}  ${BOLD}Endpoints${NC}                                                   ${CYAN}║${NC}"
 
 echo -e "${CYAN}║${NC}    gRPC:     ${FQDN}:443                                    ${CYAN}║${NC}"
-echo -e "${CYAN}║${NC}    SSH:      ssh root@${DROPLET_IP}                          ${CYAN}║${NC}"
+echo -e "${CYAN}║${NC}    SSH:      ssh root@${SERVER_IP}                          ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}                                                              ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}  ${BOLD}Credentials${NC}                                                 ${CYAN}║${NC}"
 echo -e "${CYAN}║${NC}    PostgreSQL: ${A_PG_USER} / ${PG_PASS}                     ${CYAN}║${NC}"
@@ -223,7 +238,7 @@ echo ""
 echo -e "${YELLOW}Add this to ~/.ssh/config for easy access:${NC}"
 echo ""
 echo "  Host db-router"
-echo "    HostName ${DROPLET_IP}"
+echo "    HostName ${SERVER_IP}"
 echo "    User root"
 echo "    IdentityFile ${PRIVATE_KEY}"
 echo ""
@@ -233,7 +248,7 @@ echo ""
 # Persist the SSH config snippet to state volume
 cat > "$STATE_DIR/ssh-config" <<EOF
 Host db-router
-  HostName ${DROPLET_IP}
+  HostName ${SERVER_IP}
   User root
   IdentityFile ${PRIVATE_KEY}
 EOF

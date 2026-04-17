@@ -99,14 +99,16 @@ Before deploying the Database Router to production, ensure you have the followin
 
 - **Docker & Docker Compose**: Must be installed on your local system or deployment server.
 - **Domain Name**: You must have a registered domain name (e.g., `example.com`).
-- **Cloud Provider Name Servers**: The name servers for your domain **must** be managed by your cloud provider (e.g., DigitalOcean, Cloudflare). This is required for automatic DNS management and Let's Encrypt / mTLS certificate generation.
+- **Cloud Provider Name Servers**: The name servers for your domain **must** be managed by your cloud provider (e.g., DigitalOcean, Hetzner, Cloudflare). This is required for automatic DNS management and Let's Encrypt / mTLS certificate generation.
 - **Provider API Token**: You must have a valid API token from your cloud provider to allow Terraform and Ansible to automatically provision and configure your infrastructure.
 
 ---
 
 ## 🚀 Quick Start (Cloud Deployment)
 
-The fastest way to deploy the entire stack to DigitalOcean is using our automated deployer.
+The fastest way to deploy the entire stack to the cloud is using our automated deployer. We currently support **DigitalOcean** and **Hetzner Cloud** out of the box.
+
+### Option 1: DigitalOcean
 
 **Mac / Linux:**
 
@@ -120,6 +122,22 @@ DIGITALOCEAN_TOKEN="your_token_here" docker compose up -d
 ```powershell
 cd deployer
 $env:DIGITALOCEAN_TOKEN="your_token_here"; docker compose up -d
+```
+
+### Option 2: Hetzner Cloud
+
+**Mac / Linux:**
+
+```bash
+cd deployer
+HCLOUD_TOKEN="your_token_here" docker compose up -d
+```
+
+**Windows (PowerShell):**
+
+```powershell
+cd deployer
+$env:HCLOUD_TOKEN="your_token_here"; docker compose up -d
 ```
 
 ---
