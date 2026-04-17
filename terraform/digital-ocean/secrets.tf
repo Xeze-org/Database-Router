@@ -18,4 +18,3 @@ resource "random_password" "redis" {
   length  = 24
   special = false
 }
-

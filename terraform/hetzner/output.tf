@@ -2,9 +2,9 @@
 # Connection info
 ############################################
 
-output "droplet_ip" {
-  description = "Public IPv4 of the db-router droplet"
-  value       = digitalocean_droplet.db_router.ipv4_address
+output "server_ip" {
+  description = "Public IPv4 of the db-router server"
+  value       = hcloud_server.db_router.ipv4_address
 }
 
 output "fqdn" {
@@ -17,11 +17,9 @@ output "grpc_endpoint" {
   value       = "${var.subdomain}.${var.domain}:${var.grpc_port}"
 }
 
-
-
 output "ssh_command" {
-  description = "SSH into the droplet"
-  value       = "ssh root@${digitalocean_droplet.db_router.ipv4_address}"
+  description = "SSH into the server"
+  value       = "ssh root@${hcloud_server.db_router.ipv4_address}"
 }
 
 ############################################
@@ -47,8 +45,6 @@ output "redis_password" {
   sensitive   = true
 }
 
-
-
 ############################################
 # Quick-copy summary (shown at end of apply)
 ############################################
@@ -73,8 +69,6 @@ output "credentials_summary" {
     ║                                                          ║
     ║  Redis                                                   ║
     ║    password: ${random_password.redis.result}
-    ║                                                          ║
-
     ║                                                          ║
     ╚══════════════════════════════════════════════════════════╝
 

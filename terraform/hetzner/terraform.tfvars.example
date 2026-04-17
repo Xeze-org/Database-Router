@@ -1,0 +1,19 @@
+# Copy to terraform.tfvars and fill in your values.
+# Passwords are auto-generated — you'll see them after `terraform apply`.
+# When using the deploy container, all of this is handled automatically.
+
+# IMPORTANT: restrict to your IP! Find yours: curl ifconfig.me
+allowed_ips = ["YOUR_IP/32"]
+
+# SSH key already in your Hetzner account (only for manual use; container auto-generates)
+# ssh_key_name = "my-key"
+
+# Domain (must be managed in Hetzner DNS)
+domain    = "0.xeze.org"
+subdomain = "db"
+
+# Server location (fsn1=Falkenstein, nbg1=Nuremberg, hel1=Helsinki, ash=Ashburn)
+# location = "fsn1"
+
+# Server type (cx22=2vCPU/4GB €3.99/mo, cx11=1vCPU/2GB €3.29/mo)
+# server_type = "cx22"
