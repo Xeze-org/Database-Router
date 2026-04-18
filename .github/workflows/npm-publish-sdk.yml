@@ -1,0 +1,95 @@
+name: 📦 Publish @xeze/dbr to NPM
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'sdk/node/**'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (leave blank to auto-bump patch)"
+        required: false
+        type: string
+
+jobs:
+  publish:
+    name: 🚀 Build & Publish
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🟢 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: 🤖 Auto-bump version
+        id: auto_bump
+        working-directory: sdk/node
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            npm version ${{ github.event.inputs.version }} --no-git-tag-version
+          else
+            npm version patch --no-git-tag-version
+          fi
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "VERSION=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: 📋 Show NPM version plan
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 Package: @xeze/dbr"
+          echo ""
+          CURRENT=$(npm view @xeze/dbr version 2>/dev/null || echo "not found")
+          echo "📌 Latest NPM version: $CURRENT"
+          echo "🆕 New version to publish: ${{ steps.auto_bump.outputs.VERSION }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: 💾 Commit & Push Version Bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sdk/node/package.json
+          
+          if git diff --staged --quiet; then
+            echo "No version changes to commit."
+          else
+            git commit -m "chore(node-sdk): bump version to ${{ steps.auto_bump.outputs.VERSION }} [skip ci]"
+            for i in 1 2 3 4 5; do
+              git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }} && break || sleep 5
+            done
+          fi
+
+      - name: 📦 Install dependencies
+        working-directory: sdk/node
+        run: npm ci || npm install
+
+      - name: 🚀 Publish to NPM
+        working-directory: sdk/node
+        run: |
+          VERSION="${{ steps.auto_bump.outputs.VERSION }}"
+          if npm view @xeze/dbr@$VERSION > /dev/null 2>&1; then
+            echo "Version $VERSION already exists on NPM, skipping publish."
+          else
+            npm publish --access public --provenance
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: 🏷️ Create Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "npm-v${{ steps.auto_bump.outputs.VERSION }}" -m "@xeze/dbr v${{ steps.auto_bump.outputs.VERSION }}"
+          git push origin "npm-v${{ steps.auto_bump.outputs.VERSION }}"
