@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - 'core/python/**'
-      - '.github/workflows/pypi-publish-core.yml'
   workflow_dispatch:
     inputs:
       version:
@@ -119,6 +118,7 @@ jobs:
       - name: 🚀 Publish to PyPI (Trusted Publishing)
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          skip-existing: true
           packages-dir: core/python/dist/
 
       - name: 🏷️ Create Git tag
