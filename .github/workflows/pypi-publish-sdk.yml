@@ -1,0 +1,128 @@
+name: 📦 Publish xeze-dbr to PyPI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'sdk/python/**'
+      - '.github/workflows/pypi-publish-sdk.yml'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to publish (leave blank to auto-bump patch)"
+        required: false
+        type: string
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  publish:
+    name: 🚀 Build & Publish
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write  # Required for trusted publishing (OIDC)
+      contents: write  # Required for git commiting, tagging
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 🤖 Auto-bump version
+        id: auto_bump
+        working-directory: sdk/python
+        run: |
+          python -c '
+          import re
+          import sys
+          import os
+
+          # Read current version from pyproject.toml
+          with open("pyproject.toml", "r") as f:
+              content = f.read()
+
+          match = re.search(r"version\s*=\s*\"([^\"]+)\"", content)
+          if not match:
+              print("Could not find version in pyproject.toml")
+              sys.exit(1)
+
+          current_version = match.group(1)
+          print(f"Current version: {current_version}")
+
+          input_version = os.environ.get("INPUT_VERSION", "").strip()
+          if input_version:
+              new_version = input_version
+          else:
+              parts = current_version.split(".")
+              if len(parts) >= 3 and parts[-1].isdigit():
+                  parts[-1] = str(int(parts[-1]) + 1)
+              else:
+                  parts.append("1")
+              new_version = ".".join(parts)
+
+          print(f"New version: {new_version}")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"VERSION={new_version}\n")
+          '
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+
+      - name: 📋 Show PyPI version plan
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📦 Package: xeze-dbr"
+          echo ""
+          CURRENT=$(pip index versions xeze-dbr 2>/dev/null | head -1 || echo "not found")
+          echo "📌 Latest PyPI version: $CURRENT"
+          echo "🆕 New version to publish: ${{ steps.auto_bump.outputs.VERSION }}"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: ✏️ Set version in source
+        working-directory: sdk/python
+        run: |
+          VERSION="${{ steps.auto_bump.outputs.VERSION }}"
+          sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+          sed -i "s/^__version__ = .*/__version__ = \"$VERSION\"/" src/xeze_dbr/__init__.py
+          echo "✅ Version set to $VERSION"
+
+      - name: 💾 Commit & Push Version Bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sdk/python/pyproject.toml sdk/python/src/xeze_dbr/__init__.py
+          
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No version changes to commit."
+          else
+            git commit -m "chore(python): bump version to ${{ steps.auto_bump.outputs.VERSION }} [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+
+      - name: 📦 Install build tools
+        run: pip install build
+
+      - name: 🔨 Build package
+        working-directory: sdk/python
+        run: python -m build
+
+      - name: 🚀 Publish to PyPI (Trusted Publishing)
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: sdk/python/dist/
+
+      - name: 🏷️ Create Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "pypi-v${{ steps.auto_bump.outputs.VERSION }}" -m "xeze-dbr v${{ steps.auto_bump.outputs.VERSION }}"
+          git push origin "pypi-v${{ steps.auto_bump.outputs.VERSION }}"
