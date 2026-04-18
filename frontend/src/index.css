@@ -1,0 +1,604 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --neon-cyan: #00e5ff;
+  --neon-cyan-dim: rgba(0, 229, 255, 0.15);
+  --neon-purple: #bf5af2;
+  --neon-purple-dim: rgba(191, 90, 242, 0.15);
+  --neon-green: #30d158;
+  --neon-green-dim: rgba(48, 209, 88, 0.15);
+  --neon-orange: #ff9f0a;
+  --neon-orange-dim: rgba(255, 159, 10, 0.15);
+  --neon-red: #ff453a;
+  --neon-red-dim: rgba(255, 69, 58, 0.15);
+  --bg-primary: #0a0a0f;
+  --bg-panel: rgba(12, 12, 20, 0.88);
+  --border-glow: rgba(0, 229, 255, 0.2);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: #e0e0e0;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ===== OVERLAYS (Step Indicator) ===== */
+.step-overlay {
+  position: absolute;
+  bottom: 24px;
+  right: 360px;
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(191, 90, 242, 0.3);
+  padding: 14px 20px;
+  border-radius: 16px;
+  width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 16px rgba(191, 90, 242, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 20;
+}
+
+.step-progress {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.step-dot {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  transition: all 0.3s;
+}
+.step-dot.done {
+  background: rgba(191, 90, 242, 0.5);
+}
+.step-dot.active {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px var(--neon-cyan);
+}
+
+.step-info {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.step-number {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--neon-cyan);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.step-label {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.5px;
+}
+
+.step-desc {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: #aaa;
+  line-height: 1.5;
+}
+
+/* Active connection glows */
+.connection-flow.glow-active {
+  stroke: var(--neon-cyan) !important;
+  stroke-width: 3.5px !important;
+  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.8)) !important;
+  animation-duration: 0.5s !important;
+}
+
+/* Add active glow to NodeCards when they are executing a step */
+.node-card.active .node-bg {
+  stroke: var(--neon-cyan);
+  stroke-width: 2.5px;
+  filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.6));
+}
+
+/* ===== GRID BACKGROUND ===== */
+.grid-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+.grid-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(0, 229, 255, 0.04), transparent 70%),
+              radial-gradient(ellipse 60% 50% at 20% 80%, rgba(191, 90, 242, 0.03), transparent 60%);
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0, 229, 255, 0.3); border-radius: 3px; }
+
+/* ===== APP LAYOUT ===== */
+.app-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== HEADER ===== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-glow);
+  z-index: 10;
+  flex-shrink: 0;
+}
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.header-title h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+  text-transform: uppercase;
+}
+.header-title .subtitle {
+  font-size: 0.85rem;
+  color: #555;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+.repo-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ccc;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.2s;
+}
+.repo-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.status-pill.healthy {
+  background: var(--neon-green-dim);
+  border: 1px solid rgba(48, 209, 88, 0.4);
+  color: var(--neon-green);
+}
+.status-pill.degraded {
+  background: var(--neon-red-dim);
+  border: 1px solid rgba(255, 69, 58, 0.4);
+  color: var(--neon-red);
+  animation: status-pulse 1s infinite;
+}
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.status-dot.healthy {
+  background: var(--neon-green);
+  box-shadow: 0 0 8px var(--neon-green);
+}
+.status-dot.degraded {
+  background: var(--neon-red);
+  box-shadow: 0 0 8px var(--neon-red);
+  animation: status-pulse 1s infinite;
+}
+
+/* ===== MAIN AREA ===== */
+.main-area {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ===== NETWORK MAP (SVG CANVAS) ===== */
+.network-canvas {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.network-canvas svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 340px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-left: 1px solid var(--border-glow);
+  background: rgba(8, 8, 14, 0.6);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+}
+
+/* ===== PANEL (generic glass panel) ===== */
+.panel-section {
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.panel-section:last-child {
+  border-bottom: none;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.panel-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #555;
+  margin-bottom: 14px;
+}
+
+/* ===== METRICS ===== */
+.metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.metric-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.metric-card .label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #666;
+}
+.metric-card .value {
+  font-size: 1.3rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+.metric-card .value.cyan { color: var(--neon-cyan); text-shadow: 0 0 10px rgba(0, 229, 255, 0.3); }
+.metric-card .value.purple { color: var(--neon-purple); text-shadow: 0 0 10px rgba(191, 90, 242, 0.3); }
+.metric-card .value.green { color: var(--neon-green); text-shadow: 0 0 10px rgba(48, 209, 88, 0.3); }
+.metric-card .value.orange { color: var(--neon-orange); text-shadow: 0 0 10px rgba(255, 159, 10, 0.3); }
+.metric-card .value.red { color: var(--neon-red); text-shadow: 0 0 10px rgba(255, 69, 58, 0.3); }
+
+/* ===== CONTROLS ===== */
+.control-row {
+  margin-bottom: 18px;
+}
+.control-row:last-child { margin-bottom: 0; }
+.control-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.control-header .name {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #ccc;
+}
+.control-header .val {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.control-desc {
+  font-size: 0.7rem;
+  color: #555;
+  margin-top: 4px;
+}
+
+/* Range slider */
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  outline: none;
+  transition: background 0.2s;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--neon-cyan);
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.5);
+  transition: all 0.2s;
+}
+input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.7);
+}
+
+/* Warning box */
+.warning-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--neon-red-dim);
+  border: 1px solid rgba(255, 69, 58, 0.3);
+  color: var(--neon-red);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  animation: warning-glow 2s infinite;
+}
+@keyframes warning-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 69, 58, 0); }
+  50% { box-shadow: 0 0 15px rgba(255, 69, 58, 0.15); }
+}
+
+/* ===== TERMINAL LOGS ===== */
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  flex-shrink: 0;
+}
+.terminal-dots {
+  display: flex;
+  gap: 5px;
+}
+.terminal-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.terminal-title {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+.terminal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.6;
+}
+.log-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.log-line .timestamp {
+  color: #444;
+  margin-right: 6px;
+}
+.log-line.info { color: var(--neon-green); }
+.log-line.error { color: var(--neon-red); }
+.log-line.warn { color: var(--neon-orange); }
+.log-line.vault { color: var(--neon-purple); }
+
+/* ===== SVG NODE STYLES ===== */
+
+/* Animated dash lines */
+@keyframes flow-dash {
+  to { stroke-dashoffset: -40; }
+}
+@keyframes flow-dash-reverse {
+  to { stroke-dashoffset: 40; }
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.connection-bg {
+  fill: none;
+  stroke-width: 1.5;
+  stroke: rgba(255, 255, 255, 0.04);
+}
+.connection-flow {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 8 12;
+  animation: flow-dash linear infinite;
+}
+.connection-flow.reverse {
+  animation-name: flow-dash-reverse;
+}
+.connection-flow.cyan {
+  stroke: var(--neon-cyan);
+  filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.5));
+}
+.connection-flow.green {
+  stroke: var(--neon-green);
+  filter: drop-shadow(0 0 4px rgba(48, 209, 88, 0.5));
+}
+.connection-flow.purple {
+  stroke: var(--neon-purple);
+  filter: drop-shadow(0 0 4px rgba(191, 90, 242, 0.5));
+  stroke-dasharray: 4 16;
+}
+.connection-flow.orange {
+  stroke: var(--neon-orange);
+  filter: drop-shadow(0 0 4px rgba(255, 159, 10, 0.5));
+  stroke-dasharray: 4 16;
+}
+.connection-flow.red {
+  stroke: var(--neon-red);
+  filter: drop-shadow(0 0 6px rgba(255, 69, 58, 0.6));
+  stroke-width: 3;
+}
+.connection-flow.thick {
+  stroke-width: 3;
+  stroke-dasharray: 14 8;
+}
+
+/* SVG Node cards */
+.node-card {
+  cursor: default;
+  transition: filter 0.3s;
+}
+.node-card:hover {
+  filter: brightness(1.2);
+}
+.node-bg {
+  rx: 10;
+  ry: 10;
+  fill: rgba(12, 12, 20, 0.9);
+  stroke-width: 1.5;
+  transition: all 0.3s;
+}
+.node-bg.cyan { stroke: var(--neon-cyan); filter: drop-shadow(0 0 6px rgba(0, 229, 255, 0.25)); }
+.node-bg.purple { stroke: var(--neon-purple); filter: drop-shadow(0 0 8px rgba(191, 90, 242, 0.3)); }
+.node-bg.green { stroke: var(--neon-green); filter: drop-shadow(0 0 6px rgba(48, 209, 88, 0.25)); }
+.node-bg.orange { stroke: var(--neon-orange); filter: drop-shadow(0 0 6px rgba(255, 159, 10, 0.25)); }
+.node-bg.red { stroke: var(--neon-red); filter: drop-shadow(0 0 10px rgba(255, 69, 58, 0.4)); }
+
+.node-icon {
+  font-size: 22px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.node-label {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  fill: #fff;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.node-sublabel {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  fill: #666;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  letter-spacing: 0.5px;
+}
+
+/* Particle dots traveling on paths */
+@keyframes travel-particle {
+  0% { offset-distance: 0%; opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+
+.particle {
+  offset-rotate: 0deg;
+  animation: travel-particle linear infinite;
+  r: 3;
+  opacity: 0;
+}
+.particle.cyan { fill: var(--neon-cyan); filter: drop-shadow(0 0 6px var(--neon-cyan)); }
+.particle.green { fill: var(--neon-green); filter: drop-shadow(0 0 6px var(--neon-green)); }
+.particle.purple { fill: var(--neon-purple); filter: drop-shadow(0 0 6px var(--neon-purple)); }
+.particle.orange { fill: var(--neon-orange); filter: drop-shadow(0 0 6px var(--neon-orange)); }
+
+/* Router scaling animation */
+@keyframes router-breathe {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(191, 90, 242, 0.3)); }
+  50% { filter: drop-shadow(0 0 16px rgba(191, 90, 242, 0.5)); }
+}
+.router-node .node-bg {
+  animation: router-breathe 3s ease-in-out infinite;
+}
+
+/* Overloaded shake */
+@keyframes overload-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-1.5px); }
+  40% { transform: translateX(1.5px); }
+  60% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+}
+.node-card.overloaded {
+  animation: overload-shake 0.4s infinite;
+}
+.node-card.overloaded .node-bg {
+  stroke: var(--neon-red) !important;
+  filter: drop-shadow(0 0 12px rgba(255, 69, 58, 0.5)) !important;
+  animation: none;
+}
