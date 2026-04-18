@@ -1,5 +1,7 @@
 # xeze-dbr
 
+> 🚀 **Automatic Package Release on changes**
+
 Python gRPC client for the [Xeze Database Router](https://github.com/Xeze-org/Database-Router) — a unified interface for **PostgreSQL**, **MongoDB**, and **Redis** over **mTLS**.
 
 ## Install

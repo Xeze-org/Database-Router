@@ -1,5 +1,7 @@
 # xeze-dbr-core
 
+> 🚀 **Automatic Package Release on changes**
+
 Official unified database wrapper for the Xeze infrastructure. Provides a single, heavily-abstracted client for **PostgreSQL**, **MongoDB**, and **Redis** over mTLS via HashiCorp Vault.
 
 ## Installation
