@@ -66,9 +66,18 @@ jobs:
             echo "No version changes to commit."
           else
             git commit -m "chore(node-core): bump version to ${{ steps.auto_bump.outputs.VERSION }} [skip ci]"
+            SUCCESS=0
             for i in 1 2 3 4 5; do
-              git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }} && break || sleep 5
+              if git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }}; then
+                SUCCESS=1
+                break
+              fi
+              sleep 5
             done
+            if [ $SUCCESS -eq 0 ]; then
+              echo "Failed to push version bump to GitHub!"
+              exit 1
+            fi
           fi
 
       - name: 📦 Install dependencies
@@ -84,8 +93,6 @@ jobs:
           else
             npm publish --access public --provenance
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: 🏷️ Create Git tag
         run: |
