@@ -91,7 +91,7 @@ jobs:
           if npm view @xeze/dbr@$VERSION > /dev/null 2>&1; then
             echo "Version $VERSION already exists on NPM, skipping publish."
           else
-            npm publish --access public --provenance
+            npm publish --access public
           fi
 
       - name: 🏷️ Create Git tag
