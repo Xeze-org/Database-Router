@@ -105,7 +105,10 @@ jobs:
             echo "No version changes to commit."
           else
             git commit -m "chore(python): bump version to ${{ steps.auto_bump.outputs.VERSION }} [skip ci]"
-            git push origin HEAD:${{ github.ref_name }}
+            # Retry loop to handle concurrent pushes from other workflows
+            for i in 1 2 3 4 5; do
+              git pull --rebase origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }} && break || sleep 5
+            done
           fi
 
       - name: 📦 Install build tools
