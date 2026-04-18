@@ -1,5 +1,7 @@
 # @xeze/dbr-core (Node.js)
 
+> 🚀 **Automatic Package Release on changes**
+
 High-level, Vault-integrated database client for Node.js apps on Xeze infrastructure.
 
 ## Installation
