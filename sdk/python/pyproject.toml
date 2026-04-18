@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xeze-dbr"
-version = "0.2.1"
+version = "0.2.2"
 description = "Python gRPC client for the Xeze Database Router (PostgreSQL, MongoDB, Redis over mTLS)"
 readme = "README.md"
 license = {text = "Apache-2.0"}

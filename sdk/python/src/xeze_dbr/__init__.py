@@ -26,7 +26,7 @@ Usage:
     client.redis.Info(client.pb2.RedisInfoRequest())
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 import grpc
 
