@@ -18,9 +18,12 @@ Each implementation provides the same developer experience:
 
 ## SDK vs Core
 
-| | SDK (`sdk/`) | Core (`core/`) |
+The **Core** libraries are high-level, opinionated wrappers built *directly on top* of the raw **SDK** libraries.
+
+| Feature | SDK (`sdk/`) | Core (`core/`) |
 |---|---|---|
-| **Level** | Low-level gRPC stubs | High-level abstraction |
-| **Auth** | Manual cert loading | Automatic via Vault |
-| **Isolation** | None — raw access | Enforced `app_namespace` |
-| **Use case** | Custom tooling, infra scripts | Application development |
+| **Architecture** | Raw generated gRPC stubs | Opinionated wrapper utilizing the SDK internally |
+| **mTLS Auth** | Manual (Files, raw bytes, or custom Vault integration) | Automatic (Pre-configured HashiCorp Vault client) |
+| **Database Isolation** | Manual (explicitly target any DB or collection) | Vault enforced database-per-service via `app_namespace` |
+| **Data Serialization** | Strict Protobuf structures (e.g. `structpb.Value`) | Ergonomic native language types (Dicts, Maps, Objects) |
+| **Primary Use Case** | Custom automation, CLI tools, framework builders | Backend application service development |

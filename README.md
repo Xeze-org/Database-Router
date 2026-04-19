@@ -36,39 +36,41 @@ We provide two tiers of client libraries across **7 languages**:
 
 Direct access to all gRPC service stubs. You manage certificate loading and database targeting yourself.
 
-| Language | Package | Install |
-|----------|---------|---------|
-| **Python** | [`xeze-dbr`](https://pypi.org/project/xeze-dbr/) | `pip install xeze-dbr` |
-| **Node.js** | [`@xeze/dbr`](https://www.npmjs.com/package/@xeze/dbr) | `npm install @xeze/dbr` |
-| **Rust** | [`xeze-dbr`](https://crates.io/crates/xeze-dbr) | `cargo add xeze-dbr` |
-| **Go** | `code.xeze.org/xeze/Database-Router/sdk/go` | `go get code.xeze.org/xeze/Database-Router/sdk/go` |
-| **Java** | `org.xeze.dbr / xeze-dbr` | `<dependency> ... </dependency>` |
-| **C++** | `xeze_dbr` | `FetchContent` via CMake |
-| **Zig (Exp)** | `xeze-dbr` | `build.zig.zon` deps |
+| Language            | Package                                               | Install                                              |
+| ------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| **Python**    | [`xeze-dbr`](https://pypi.org/project/xeze-dbr/)       | `pip install xeze-dbr`                             |
+| **Node.js**   | [`@xeze/dbr`](https://www.npmjs.com/package/@xeze/dbr) | `npm install @xeze/dbr`                            |
+| **Rust**      | [`xeze-dbr`](https://crates.io/crates/xeze-dbr)        | `cargo add xeze-dbr`                               |
+| **Go**        | `code.xeze.org/xeze/Database-Router/sdk/go`         | `go get code.xeze.org/xeze/Database-Router/sdk/go` |
+| **Java**      | `org.xeze.dbr / xeze-dbr`                           | `<dependency> ... </dependency>`                   |
+| **C++**       | `xeze_dbr`                                          | `FetchContent` via CMake                           |
+| **Zig (Exp)** | `xeze-dbr`                                          | `build.zig.zon` deps                               |
 
 ### Core — High-Level Vault Wrappers
 
 One-line setup with automatic Vault mTLS auth and database-per-service isolation via `app_namespace`. This is what most developers should use.
 
-| Language | Package | Install |
-|----------|---------|---------|
-| **Python** | [`xeze-dbr-core`](https://pypi.org/project/xeze-dbr-core/) | `pip install xeze-dbr-core` |
-| **Node.js** | [`@xeze/dbr-core`](https://www.npmjs.com/package/@xeze/dbr-core) | `npm install @xeze/dbr-core` |
-| **Rust** | [`xeze-dbr-core`](https://crates.io/crates/xeze-dbr-core) | `cargo add xeze-dbr-core` |
-| **Go** | `code.xeze.org/xeze/Database-Router/core/go` | `go get code.xeze.org/xeze/Database-Router/core/go` |
-| **Java** | `org.xeze.dbr.core / xeze-dbr-core` | `<dependency> ... </dependency>` |
-| **C++** | `xeze_dbr_core` | `FetchContent` via CMake |
-| **Zig (Exp)** | `xeze-dbr-core` | `build.zig.zon` deps |
+| Language            | Package                                                         | Install                                               |
+| ------------------- | --------------------------------------------------------------- | ----------------------------------------------------- |
+| **Python**    | [`xeze-dbr-core`](https://pypi.org/project/xeze-dbr-core/)       | `pip install xeze-dbr-core`                         |
+| **Node.js**   | [`@xeze/dbr-core`](https://www.npmjs.com/package/@xeze/dbr-core) | `npm install @xeze/dbr-core`                        |
+| **Rust**      | [`xeze-dbr-core`](https://crates.io/crates/xeze-dbr-core)        | `cargo add xeze-dbr-core`                           |
+| **Go**        | `code.xeze.org/xeze/Database-Router/core/go`                  | `go get code.xeze.org/xeze/Database-Router/core/go` |
+| **Java**      | `org.xeze.dbr.core / xeze-dbr-core`                           | `<dependency> ... </dependency>`                    |
+| **C++**       | `xeze_dbr_core`                                               | `FetchContent` via CMake                            |
+| **Zig (Exp)** | `xeze-dbr-core`                                               | `build.zig.zon` deps                                |
 
 ### SDK vs Core — Which One?
 
-| | SDK (`sdk/`) | Core (`core/`) |
-|---|---|---|
-| **Level** | Low-level gRPC stubs | High-level abstraction |
-| **Auth** | Manual cert loading | Automatic via HashiCorp Vault |
-| **Isolation** | None — raw access | Enforced namespace per service |
-| **Data format** | Protobuf messages | Native language types (dicts, maps, objects) |
-| **Use case** | Custom tooling, infra scripts | Application development |
+The **Core** libraries are high-level, opinionated wrappers built *directly on top* of the raw **SDK** libraries.
+
+| Feature                      | SDK (`sdk/`)                                      | Core (`core/`)                                          |
+| ---------------------------- | --------------------------------------------------- | --------------------------------------------------------- |
+| **Architecture**       | Raw generated gRPC stubs                            | Opinionated wrapper utilizing the SDK internally          |
+| **mTLS Auth**          | Files and Vault integration                         | Automatic (Pre-configured HashiCorp Vault client)         |
+| **Database Isolation** | Manual (explicitly target any DB or collection)     | Vault enforced database-per-service via `app_namespace` |
+| **Data Serialization** | Strict Protobuf structures (e.g.`structpb.Value`) | Ergonomic native language types (Dicts, Maps, Objects)    |
+| **Primary Use Case**   | Custom automation, CLI tools, framework builders    | Backend application service development                   |
 
 ### Quick Example (Core — Python)
 
