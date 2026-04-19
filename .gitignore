@@ -28,6 +28,41 @@ Cargo.lock
 node_modules/
 package-lock.json
 
+# ── Java ──────────────────────────────────────────────────────────────────────
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+target/
+.mvn/
+mvnw
+mvnw.cmd
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ── Zig ───────────────────────────────────────────────────────────────────────
+zig-cache/
+zig-out/
+
+# ── C++ / CMake ───────────────────────────────────────────────────────────────
+build/
+out/
+bin/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+compile_commands.json
+
 # ── Go build / test artifacts ─────────────────────────────────────────────────
 *.test
 *.out
