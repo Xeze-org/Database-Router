@@ -1,0 +1,12 @@
+{
+  "name": "node-core-test",
+  "version": "1.0.0",
+  "description": "Test the node core client",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index.js"
+  },
+  "dependencies": {
+    "@xeze/dbr-core": "latest"
+  }
+}
