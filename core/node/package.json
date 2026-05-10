@@ -1,6 +1,6 @@
 {
   "name": "@xeze/dbr-core",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "High-level Vault-integrated database client for Node.js apps on Xeze infrastructure",
   "main": "index.js",
   "types": "index.d.ts",
