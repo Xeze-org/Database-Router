@@ -16,7 +16,7 @@
 - name: Create .env for Docker Compose
   template:
     src: env.j2
-    dest: /opt/db-router/.env
+    dest: /opt/db-router/local-deploy/.env
     mode: "0600"
 
 - name: Create config.json for db-router
