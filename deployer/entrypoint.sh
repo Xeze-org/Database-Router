@@ -198,7 +198,17 @@ ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
   -i inventory.ini \
   playbook.yml
 
-# ── 8. Summary ───────────────────────────────────────────────────────────────
+# ── 8. Fetch certificates ────────────────────────────────────────────────────
+
+if [ "$A_MTLS" = "true" ]; then
+  log "Fetching mTLS certificates for local testing..."
+  mkdir -p "$STATE_DIR/certs"
+  # Use scp to pull the certs directory from the droplet
+  scp $SSH_OPTS -i "$PRIVATE_KEY" root@"$DROPLET_IP":/opt/db-router/certs/*.{crt,key} "$STATE_DIR/certs/" || warn "Failed to fetch some certificates"
+  log "Certificates saved to $STATE_DIR/certs"
+fi
+
+# ── 9. Summary ───────────────────────────────────────────────────────────────
 
 echo ""
 echo -e "${CYAN}╔══════════════════════════════════════════════════════════════╗${NC}"
