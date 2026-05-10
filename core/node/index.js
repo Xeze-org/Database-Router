@@ -42,15 +42,25 @@ class XezeCoreClient {
       throw new Error("A strict appNamespace (e.g., 'xms', 'selfnote') is required.");
     }
 
-    const vaultAddr = process.env.VAULT_ADDR || "http://127.0.0.1:8200";
-    const vaultToken = process.env.VAULT_TOKEN || "dev-root-token";
     const host = process.env.DB_ROUTER_HOST || "db.0.xeze.org:443";
 
-    // Fetch certs from Vault KV v2
-    const vc = vault({ apiVersion: "v1", endpoint: vaultAddr, token: vaultToken });
-    const secret = await vc.read("secret/data/dbrouter/certs");
-    const certData = Buffer.from(secret.data.data.client_cert);
-    const keyData = Buffer.from(secret.data.data.client_key);
+    let certData, keyData;
+
+    // Support loading certs directly from a folder if provided
+    if (process.env.DB_CERTS_DIR) {
+      const fs = require('fs');
+      const path = require('path');
+      certData = fs.readFileSync(path.join(process.env.DB_CERTS_DIR, 'client.crt'));
+      keyData = fs.readFileSync(path.join(process.env.DB_CERTS_DIR, 'client.key'));
+    } else {
+      // Fetch certs from Vault KV v2
+      const vaultAddr = process.env.VAULT_ADDR || "http://127.0.0.1:8200";
+      const vaultToken = process.env.VAULT_TOKEN || "dev-root-token";
+      const vc = vault({ apiVersion: "v1", endpoint: vaultAddr, token: vaultToken });
+      const secret = await vc.read("secret/data/dbrouter/certs");
+      certData = Buffer.from(secret.data.data.client_cert);
+      keyData = Buffer.from(secret.data.data.client_key);
+    }
 
     const client = connect({ host, certData, keyData });
     return new XezeCoreClient(appNamespace, client);

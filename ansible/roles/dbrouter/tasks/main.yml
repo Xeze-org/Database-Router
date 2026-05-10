@@ -140,7 +140,7 @@
 
 - name: Build and start db-router stack
   community.docker.docker_compose_v2:
-    project_src: /opt/db-router
+    project_src: /opt/db-router/local-deploy
     state: present
     pull: always
     build: always
