@@ -16,7 +16,7 @@
 - name: Create .env for Docker Compose
   template:
     src: env.j2
-    dest: /opt/db-router/deployer/dbr/.env
+    dest: /opt/db-router/.env
     mode: "0600"
 
 - name: Create config.json for db-router
@@ -140,7 +140,9 @@
 
 - name: Build and start db-router stack
   community.docker.docker_compose_v2:
-    project_src: /opt/db-router/local-deploy
+    project_src: /opt/db-router/deployer/dbr
+    env_files:
+      - /opt/db-router/.env
     state: present
     pull: always
     build: always
