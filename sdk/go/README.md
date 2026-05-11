@@ -1,11 +1,11 @@
 # xeze-dbr (Go SDK)
 
-Go gRPC client for the [Xeze Database Router](https://code.xeze.org/xeze/Database-Router).
+Go gRPC client for the [Xeze Database Router](https://github.com/Xeze-org/Database-Router).
 
 ## Installation
 
 ```bash
-go get code.xeze.org/xeze/Database-Router/sdk/go
+go get github.com/Xeze-org/Database-Router/sdk/go
 ```
 
 ## Quick Start
@@ -18,8 +18,8 @@ import (
     "fmt"
     "log"
 
-    dbr "code.xeze.org/xeze/Database-Router/sdk/go"
-    pb "code.xeze.org/xeze/Database-Router/sdk/go/proto/dbrouter"
+    dbr "github.com/Xeze-org/Database-Router/sdk/go"
+    pb "github.com/Xeze-org/Database-Router/sdk/go/proto/dbrouter"
 )
 
 func main() {
