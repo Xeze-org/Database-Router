@@ -11,11 +11,11 @@ categories = ["database", "network-programming"]
 include = ["src/**/*", "proto/**/*", "build.rs", "Cargo.toml", "README.md", "LICENSE"]
 
 [dependencies]
-tonic = { version = "0.12", features = ["tls"] }
+tonic = { version = "0.14", features = ["tls"] }
 prost = "0.13"
 prost-types = "0.13"
 tokio = { version = "1", features = ["full"] }
 rustls-pemfile = "2.1"
 
 [build-dependencies]
-tonic-build = "0.12"
+tonic-build = "0.14"
