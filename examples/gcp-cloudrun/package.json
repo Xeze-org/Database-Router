@@ -8,6 +8,6 @@
   },
   "dependencies": {
     "express": "^4.19.2",
-    "@xeze/dbr-core": "file:../../core/node"
+    "@xeze/dbr-core": "latest"
   }
 }

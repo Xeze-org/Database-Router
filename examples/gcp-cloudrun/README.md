@@ -16,11 +16,13 @@ gcloud config set project YOUR_PROJECT_ID
 
 ## Step 1: Build & Push the Container
 
-Since this project relies on local SDK folders (`core/node` and `sdk/node`), you **must run the build command from the root of the Database Router repository**.
+Now that `@xeze/dbr-core` is published to NPM, building is incredibly simple. 
 
-Run these commands from your root folder (`E:\projects\Database-Router`):
+Run these commands from the `examples/gcp-cloudrun` folder:
 
 ```bash
+cd E:\projects\Database-Router\examples\gcp-cloudrun
+
 # 1. Enable Artifact Registry (if you haven't already)
 gcloud services enable artifactregistry.googleapis.com
 
@@ -34,7 +36,7 @@ gcloud artifacts repositories create dbr-apps \
 gcloud auth configure-docker asia-south1-docker.pkg.dev
 
 # 4. Build and tag the image
-docker build -f examples/gcp-cloudrun/Dockerfile -t asia-south1-docker.pkg.dev/YOUR_PROJECT_ID/dbr-apps/gcp-cloudrun-example:latest .
+docker build -t asia-south1-docker.pkg.dev/YOUR_PROJECT_ID/dbr-apps/gcp-cloudrun-example:latest .
 
 # 5. Push the image to Artifact Registry
 docker push asia-south1-docker.pkg.dev/YOUR_PROJECT_ID/dbr-apps/gcp-cloudrun-example:latest
