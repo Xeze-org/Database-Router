@@ -16,6 +16,9 @@
     "**/venv/**",
     "**/vendor/**"
   ],
+  "ignoreDeps": [
+    "org.xeze.dbr:xeze-dbr"
+  ],
   "prConcurrentLimit": 10,
   "prHourlyLimit": 2
 }
