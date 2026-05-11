@@ -40,7 +40,7 @@ services:
           memory: 400M
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: unified_redis
     restart: always
     env_file:
