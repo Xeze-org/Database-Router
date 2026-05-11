@@ -2,7 +2,7 @@
 //
 // Usage:
 //
-//	import dbr "code.xeze.org/xeze/Database-Router/sdk/go"
+//	import dbr "github.com/Xeze-org/Database-Router/sdk/go"
 //
 //	// File-based mTLS
 //	client, err := dbr.Connect(dbr.Options{
@@ -34,7 +34,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "code.xeze.org/xeze/Database-Router/sdk/go/proto/dbrouter"
+	pb "github.com/Xeze-org/Database-Router/sdk/go/proto/dbrouter"
 )
 
 // Options configures the connection to a Database Router instance.

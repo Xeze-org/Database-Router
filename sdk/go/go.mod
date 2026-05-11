@@ -1,4 +1,4 @@
-module code.xeze.org/xeze/Database-Router/sdk/go
+module github.com/Xeze-org/Database-Router/sdk/go
 
 go 1.21
 
