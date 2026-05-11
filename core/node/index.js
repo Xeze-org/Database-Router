@@ -150,6 +150,27 @@ class XezeCoreClient {
     return resp.insertedId;
   }
 
+  /**
+   * Find documents in MongoDB.
+   * @param {string} collection
+   * @returns {Promise<object[]>}
+   */
+  async mongoFind(collection) {
+    const resp = await this._client.mongo.FindDocuments({
+      database: this.mongoDb,
+      collection,
+    });
+    return (resp.documents || []).map((doc) => {
+      const obj = {};
+      for (const [key, val] of Object.entries(doc.fields || {})) {
+        if (val.stringValue !== undefined) obj[key] = val.stringValue;
+        else if (val.numberValue !== undefined) obj[key] = val.numberValue;
+        else if (val.boolValue !== undefined) obj[key] = val.boolValue;
+      }
+      return obj;
+    });
+  }
+
   // --- Redis API ---
 
   /**
