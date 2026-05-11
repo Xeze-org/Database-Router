@@ -1,0 +1,23 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "schedule": [
+    "every weekend"
+  ],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "automergeType": "pr"
+    }
+  ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/venv/**",
+    "**/vendor/**"
+  ],
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 2
+}

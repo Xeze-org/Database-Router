@@ -1,0 +1,24 @@
+name: Renovate
+
+on:
+  schedule:
+    # Run once a week on Sunday at midnight UTC
+    - cron: '0 0 * * 0'
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v40.0.0
+        with:
+          # Use the configuration file in the root directory
+          configurationFile: renovate.json
+          # You need to create a Personal Access Token (PAT) with `repo` scope
+          # and save it as a repository secret named `RENOVATE_TOKEN`
+          token: ${{ secrets.RENOVATE_TOKEN }}
