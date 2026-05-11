@@ -18,6 +18,9 @@ interface XezeCoreClientInstance {
   /** Insert a plain JS object into MongoDB. */
   mongoInsert(collection: string, doc: Record<string, any>): Promise<string>;
 
+  /** Find documents in MongoDB. */
+  mongoFind(collection: string): Promise<Record<string, any>[]>;
+
   /** Set a namespaced key with TTL (default 3600s). */
   redisSet(key: string, value: string, ttl?: number): Promise<void>;
 

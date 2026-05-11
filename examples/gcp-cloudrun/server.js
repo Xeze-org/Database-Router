@@ -28,52 +28,69 @@ async function initDb() {
 // Serve static files from the 'public' directory
 const path = require('path');
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json()); // Parse JSON bodies
 
-// API endpoint to run database tests
-app.get('/api/test', async (req, res) => {
+// GET /api/posts - Fetch posts from Redis or MongoDB
+app.get('/api/posts', async (req, res) => {
   try {
     const db = await initDb();
-    const timestamp = new Date().toISOString();
     
-    const results = {
-      status: "success",
-      message: "GCP Cloud Run Example App is alive!",
-      tests: {}
-    };
-
-    // 1. Test PostgreSQL
-    try {
-      await db.pgQuery("CREATE TABLE IF NOT EXISTS page_views (id SERIAL PRIMARY KEY, view_time VARCHAR(255));");
-      await db.pgInsert("page_views", { view_time: timestamp });
-      const pgData = await db.pgQuery("SELECT * FROM page_views ORDER BY id DESC LIMIT 1;");
-      results.tests.postgres = { status: "OK", latest_row: pgData[0] };
-    } catch (e) {
-      results.tests.postgres = { status: "ERROR", error: e.message };
+    // Check Redis cache first
+    const cachedPosts = await db.redisGet("blog:posts");
+    if (cachedPosts) {
+      console.log("Serving posts from Redis cache");
+      return res.json({ status: "success", source: "redis", data: JSON.parse(cachedPosts) });
     }
 
-    // 2. Test MongoDB
-    try {
-      const mongoId = await db.mongoInsert("access_logs", { endpoint: "/", accessed_at: timestamp });
-      results.tests.mongodb = { status: "OK", inserted_id: mongoId };
-    } catch (e) {
-      results.tests.mongodb = { status: "ERROR", error: e.message };
-    }
-
-    // 3. Test Redis
-    try {
-      await db.redisSet("latest_visitor", timestamp, 300);
-      const redisVal = await db.redisGet("latest_visitor");
-      results.tests.redis = { status: "OK", cached_value: redisVal };
-    } catch (e) {
-      results.tests.redis = { status: "ERROR", error: e.message };
-    }
-
-    res.json(results);
+    // Fallback to MongoDB
+    console.log("Serving posts from MongoDB");
+    const posts = await db.mongoFind("posts");
     
+    // Sort posts by date descending (assuming id contains timestamp or sorting in JS)
+    posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Cache in Redis for 10 minutes
+    await db.redisSet("blog:posts", JSON.stringify(posts), 600);
+
+    res.json({ status: "success", source: "mongodb", data: posts });
   } catch (error) {
     res.status(500).json({
       status: "error",
-      message: "Failed to process request",
+      message: "Failed to fetch posts",
+      error: error.message
+    });
+  }
+});
+
+// POST /api/posts - Create a new post
+app.post('/api/posts', async (req, res) => {
+  try {
+    const { title, content, author } = req.body;
+    
+    if (!title || !content) {
+      return res.status(400).json({ status: "error", message: "Title and content are required." });
+    }
+
+    const db = await initDb();
+    const newPost = {
+      title,
+      content,
+      author: author || "Anonymous",
+      createdAt: new Date().toISOString()
+    };
+
+    // Insert into MongoDB
+    const insertedId = await db.mongoInsert("posts", newPost);
+    newPost._id = insertedId;
+
+    // Invalidate Redis cache
+    await db._client.redis.DeleteKey({ key: `${db.redisPrefix}blog:posts` });
+
+    res.status(201).json({ status: "success", data: newPost });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to create post",
       error: error.message
     });
   }
