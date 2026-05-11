@@ -4,9 +4,6 @@
     "config:recommended"
   ],
   "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
-  "schedule": [
-    "every weekend"
-  ],
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
