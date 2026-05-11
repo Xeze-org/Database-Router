@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xeze-dbr-core"
-version = "0.1.2"
+version = "0.1.3"
 description = "Official unified database wrapper for the Xeze infrastructure."
 readme = "README.md"
 license = { text = "Apache-2.0" }
