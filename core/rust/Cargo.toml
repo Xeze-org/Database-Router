@@ -12,7 +12,7 @@ categories = ["database", "network-programming"]
 [dependencies]
 xeze-dbr = "0.1.1"
 tokio = { version = "1", features = ["full"] }
-tonic = "0.12"
+tonic = "0.14"
 prost = "0.13"
 prost-types = "0.13"
 reqwest = { version = "0.12", features = ["json"], default-features = false }
