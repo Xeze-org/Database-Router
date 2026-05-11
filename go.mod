@@ -4,7 +4,7 @@ go 1.24.0
 
 require (
 	github.com/Xeze-org/Database-Router/sdk/go v0.0.0-00010101000000-000000000000
-	github.com/go-redis/redis/v8 v8.11.5
+	github.com/go-redis/redis/v9 v9.19.0
 	github.com/lib/pq v1.10.9
 	go.mongodb.org/mongo-driver v1.17.9
 	go.mongodb.org/mongo-driver/v2 v2.6.0
