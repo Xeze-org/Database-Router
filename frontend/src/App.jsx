@@ -3,8 +3,6 @@ import './index.css';
 import NetworkMap from './components/NetworkMap';
 import Controls from './components/Controls';
 import TerminalLogs from './components/TerminalLogs';
-import StepIndicator from './components/StepIndicator';
-
 /* ─── Sequence steps (real flow: Client → Backend → Caddy → Router → DB) ─── */
 const FLOW_STEPS = [
   { id: 0, label: 'User Request',   desc: 'Client App sends HTTP/WS request to Backend Server', from: 'client', to: 'backend' },
@@ -115,10 +113,6 @@ function App() {
               </svg>
               Repository
             </a>
-            <div className={`status-pill ${isOverloaded ? 'degraded' : 'healthy'}`}>
-              <div className={`status-dot ${isOverloaded ? 'degraded' : 'healthy'}`} />
-              {isOverloaded ? 'DEGRADED' : 'HEALTHY'}
-            </div>
           </div>
         </header>
 
@@ -134,54 +128,9 @@ function App() {
               activeDb={activeDb}
               poolUsage={poolUsage}
             />
-            {/* ── Step Overlay ── */}
-            <StepIndicator step={currentStep} stepIndex={activeStep} total={FLOW_STEPS.length} />
           </div>
 
-          {/* ── Sidebar ── */}
-          <aside className="sidebar">
-            {/* Metrics */}
-            <div className="panel-section">
-              <div className="panel-label">Live Metrics</div>
-              <div className="metric-grid">
-                <div className="metric-card">
-                  <span className="label">Throughput</span>
-                  <span className={`value ${isOverloaded ? 'red' : 'cyan'}`}>{(trafficLoad * 100).toLocaleString()}</span>
-                  <span className="label">req/s</span>
-                </div>
-                <div className="metric-card">
-                  <span className="label">Compute</span>
-                  <span className="value purple">{computeScale}x</span>
-                  <span className="label">vCPU / RAM</span>
-                </div>
-                <div className="metric-card">
-                  <span className="label">Utilization</span>
-                  <span className={`value ${utilization > 80 ? 'red' : utilization > 50 ? 'orange' : 'green'}`}>{utilization}%</span>
-                  <span className="label">capacity</span>
-                </div>
-                <div className="metric-card">
-                  <span className="label">Pool</span>
-                  <span className={`value ${poolUsage > 20 ? 'red' : poolUsage > 10 ? 'orange' : 'cyan'}`}>{poolUsage}/25</span>
-                  <span className="label">conn</span>
-                </div>
-              </div>
-            </div>
 
-            {/* Controls */}
-            <div className="panel-section">
-              <div className="panel-label">System Controls</div>
-              <Controls
-                trafficLoad={trafficLoad} setTrafficLoad={setTrafficLoad}
-                computeScale={computeScale} setComputeScale={setComputeScale}
-                isOverloaded={isOverloaded}
-              />
-            </div>
-
-            {/* Terminal */}
-            <div className="panel-section">
-              <TerminalLogs logs={logs} />
-            </div>
-          </aside>
         </div>
       </div>
     </>

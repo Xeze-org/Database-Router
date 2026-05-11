@@ -266,10 +266,12 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
 }
 .network-canvas svg {
   width: 100%;
   height: 100%;
+  max-height: calc(100vh - 80px);
 }
 
 /* ===== SIDEBAR ===== */
@@ -517,7 +519,7 @@ input[type=range]::-webkit-slider-thumb:hover {
 
 /* SVG Node cards */
 .node-card {
-  cursor: default;
+  cursor: pointer;
   transition: filter 0.3s;
 }
 .node-card:hover {
@@ -601,4 +603,185 @@ input[type=range]::-webkit-slider-thumb:hover {
   stroke: var(--neon-red) !important;
   filter: drop-shadow(0 0 12px rgba(255, 69, 58, 0.5)) !important;
   animation: none;
+}
+
+/* ===== EXPLAINER MODAL ===== */
+.explainer-modal {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.explainer-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+.explainer-content {
+  position: relative;
+  background: rgba(15, 15, 25, 0.95);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 229, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  color: #fff;
+  z-index: 101;
+  animation: modal-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes modal-pop {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.explainer-content .close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 18px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.explainer-content .close-btn:hover {
+  color: #fff;
+}
+.explainer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.explainer-header .icon {
+  font-size: 28px;
+}
+.explainer-header h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--neon-cyan);
+  margin: 0;
+}
+.explainer-content p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #ddd;
+}
+.explainer-meta {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.meta-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: #aaa;
+  letter-spacing: 0.5px;
+}
+
+/* ===== MOBILE RESPONSIVE ===== */
+@media (max-width: 768px) {
+  html, body {
+    overflow: hidden;
+  }
+
+  /* ── Header compact ── */
+  .header {
+    padding: 10px 16px;
+  }
+  .header-title h1 {
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+  }
+  .header-title .subtitle {
+    display: none;
+  }
+  .repo-link {
+    padding: 4px 10px;
+    font-size: 0.65rem;
+  }
+
+  /* ── Main area: allow horizontal scroll ── */
+  .main-area {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Diagram: fixed wide canvas that scrolls horizontally ── */
+  .network-canvas {
+    flex: none;
+    width: max-content;
+    min-width: 100vw;
+    padding: 8px 0;
+    align-items: flex-start;
+  }
+  .network-canvas svg {
+    width: 1000px;
+    min-width: 1000px;
+    height: calc(100vh - 60px);
+    max-height: none;
+  }
+
+  /* ── Scroll hint: right-edge fade ── */
+  .main-area::after {
+    content: '';
+    position: fixed;
+    right: 0;
+    top: 60px;
+    bottom: 0;
+    width: 40px;
+    background: linear-gradient(90deg, transparent, rgba(10, 10, 15, 0.8));
+    pointer-events: none;
+    z-index: 15;
+    animation: scroll-hint-fade 3s ease-out forwards;
+  }
+  @keyframes scroll-hint-fade {
+    0%, 60% { opacity: 1; }
+    100% { opacity: 0.3; }
+  }
+
+  /* ── Explainer modal: bottom sheet on mobile ── */
+  .explainer-modal {
+    align-items: flex-end;
+  }
+  .explainer-content {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px 28px;
+    animation: modal-slide-up 0.3s ease-out;
+  }
+  @keyframes modal-slide-up {
+    0% { transform: translateY(100%); }
+    100% { transform: translateY(0); }
+  }
+  .explainer-header h3 {
+    font-size: 1rem;
+  }
+  .explainer-content p {
+    font-size: 0.82rem;
+  }
+}
+
+/* ── Extra small screens (< 480px) ── */
+@media (max-width: 480px) {
+  .header-title h1 {
+    font-size: 0.75rem;
+  }
+  .network-canvas svg {
+    width: 860px;
+    min-width: 860px;
+    height: calc(100vh - 50px);
+  }
 }
