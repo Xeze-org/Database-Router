@@ -3,7 +3,7 @@ stages:
 
 python:lint:
   stage: lint
-  image: python:3.10-slim
+  image: python:3.14-slim
   before_script:
     - pip install flake8
   script:
