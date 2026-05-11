@@ -46,8 +46,14 @@ class XezeCoreClient {
 
     let certData, keyData;
 
+    // Support loading certs explicitly via file paths
+    if (process.env.DB_ROUTER_CERT && process.env.DB_ROUTER_KEY) {
+      const fs = require('fs');
+      certData = fs.readFileSync(process.env.DB_ROUTER_CERT);
+      keyData = fs.readFileSync(process.env.DB_ROUTER_KEY);
+    } 
     // Support loading certs directly from a folder if provided
-    if (process.env.DB_CERTS_DIR) {
+    else if (process.env.DB_CERTS_DIR) {
       const fs = require('fs');
       const path = require('path');
       certData = fs.readFileSync(path.join(process.env.DB_CERTS_DIR, 'client.crt'));

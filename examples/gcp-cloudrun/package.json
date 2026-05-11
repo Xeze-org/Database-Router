@@ -1,0 +1,13 @@
+{
+  "name": "gcp-cloudrun-example",
+  "version": "1.0.0",
+  "description": "Example Node.js app for Google Cloud Run connecting to db-router via mTLS",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "@xeze/dbr-core": "file:../../core/node"
+  }
+}
