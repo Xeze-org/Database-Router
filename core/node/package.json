@@ -28,6 +28,6 @@
   },
   "dependencies": {
     "@xeze/dbr": "^0.1.0",
-    "node-vault": "^0.10.2"
+    "node-vault": "^0.12.0"
   }
 }
