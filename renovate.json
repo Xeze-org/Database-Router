@@ -3,6 +3,7 @@
   "extends": [
     "config:recommended"
   ],
+  "gitAuthor": "Renovate Bot <bot@renovateapp.com>",
   "schedule": [
     "every weekend"
   ],

@@ -22,3 +22,6 @@ jobs:
           # You need to create a Personal Access Token (PAT) with `repo` scope
           # and save it as a repository secret named `RENOVATE_TOKEN`
           token: ${{ secrets.RENOVATE_TOKEN }}
+        env:
+          # Tell Renovate which repository to run against
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
