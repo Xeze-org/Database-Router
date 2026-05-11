@@ -9,7 +9,7 @@ Official unified database wrapper for the Xeze infrastructure. Provides a single
 include(FetchContent)
 
 FetchContent_Declare(xeze_core
-    GIT_REPOSITORY https://code.xeze.org/xeze/Database-Router.git
+    GIT_REPOSITORY https://github.com/Xeze-org/Database-Router.git
     GIT_TAG main
     SOURCE_SUBDIR core/cpp
 )

@@ -41,7 +41,7 @@ Direct access to all gRPC service stubs. You manage certificate loading and data
 | **Python**    | [`xeze-dbr`](https://pypi.org/project/xeze-dbr/)       | `pip install xeze-dbr`                             |
 | **Node.js**   | [`@xeze/dbr`](https://www.npmjs.com/package/@xeze/dbr) | `npm install @xeze/dbr`                            |
 | **Rust**      | [`xeze-dbr`](https://crates.io/crates/xeze-dbr)        | `cargo add xeze-dbr`                               |
-| **Go**        | `code.xeze.org/xeze/Database-Router/sdk/go`         | `go get code.xeze.org/xeze/Database-Router/sdk/go` |
+| **Go**        | `github.com/Xeze-org/Database-Router/sdk/go`         | `go get github.com/Xeze-org/Database-Router/sdk/go` |
 | **Java**      | `org.xeze.dbr / xeze-dbr`                           | `<dependency> ... </dependency>`                   |
 | **C++**       | `xeze_dbr`                                          | `FetchContent` via CMake                           |
 | **Zig (Exp)** | `xeze-dbr`                                          | `build.zig.zon` deps                               |
@@ -55,7 +55,7 @@ One-line setup with automatic Vault mTLS auth and database-per-service isolation
 | **Python**    | [`xeze-dbr-core`](https://pypi.org/project/xeze-dbr-core/)       | `pip install xeze-dbr-core`                         |
 | **Node.js**   | [`@xeze/dbr-core`](https://www.npmjs.com/package/@xeze/dbr-core) | `npm install @xeze/dbr-core`                        |
 | **Rust**      | [`xeze-dbr-core`](https://crates.io/crates/xeze-dbr-core)        | `cargo add xeze-dbr-core`                           |
-| **Go**        | `code.xeze.org/xeze/Database-Router/core/go`                  | `go get code.xeze.org/xeze/Database-Router/core/go` |
+| **Go**        | `github.com/Xeze-org/Database-Router/core/go`                  | `go get github.com/Xeze-org/Database-Router/core/go` |
 | **Java**      | `org.xeze.dbr.core / xeze-dbr-core`                           | `<dependency> ... </dependency>`                    |
 | **C++**       | `xeze_dbr_core`                                               | `FetchContent` via CMake                            |
 | **Zig (Exp)** | `xeze-dbr-core`                                               | `build.zig.zon` deps                                |

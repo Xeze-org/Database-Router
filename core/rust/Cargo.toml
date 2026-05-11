@@ -5,7 +5,7 @@ edition = "2021"
 authors = ["Xeze <dev@xeze.org>"]
 description = "High-level Vault-integrated database client for Rust apps on Xeze infrastructure"
 license = "Apache-2.0"
-repository = "https://code.xeze.org/xeze/Database-Router"
+repository = "https://github.com/Xeze-org/Database-Router"
 keywords = ["xeze", "database", "vault", "grpc", "postgresql"]
 categories = ["database", "network-programming"]
 

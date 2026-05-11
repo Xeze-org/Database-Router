@@ -11,7 +11,7 @@ This library is built with CMake and strictly enforces C++23 standards. You can 
 include(FetchContent)
 
 FetchContent_Declare(xeze_dbr
-    GIT_REPOSITORY https://code.xeze.org/xeze/Database-Router.git
+    GIT_REPOSITORY https://github.com/Xeze-org/Database-Router.git
     GIT_TAG main
     SOURCE_SUBDIR sdk/cpp
 )

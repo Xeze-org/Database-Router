@@ -1,6 +1,6 @@
 # xeze-dbr (Rust SDK)
 
-Rust gRPC client for the [Xeze Database Router](https://code.xeze.org/xeze/Database-Router).
+Rust gRPC client for the [Xeze Database Router](https://github.com/Xeze-org/Database-Router).
 
 [![crates.io](https://img.shields.io/crates/v/xeze-dbr.svg)](https://crates.io/crates/xeze-dbr)
 

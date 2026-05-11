@@ -5,7 +5,7 @@ High-level, Vault-integrated database client for Go applications on Xeze infrast
 ## Installation
 
 ```bash
-go get code.xeze.org/xeze/Database-Router/core/go
+go get github.com/Xeze-org/Database-Router/core/go
 ```
 
 ## Quick Start
@@ -18,7 +18,7 @@ import (
     "fmt"
     "log"
 
-    xeze "code.xeze.org/xeze/Database-Router/core/go"
+    xeze "github.com/Xeze-org/Database-Router/core/go"
 )
 
 func main() {

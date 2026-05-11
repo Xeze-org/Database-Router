@@ -23,8 +23,8 @@ import (
 	"strings"
 
 	vault "github.com/hashicorp/vault/api"
-	dbr "code.xeze.org/xeze/Database-Router/sdk/go"
-	pb "code.xeze.org/xeze/Database-Router/sdk/go/proto/dbrouter"
+	dbr "github.com/Xeze-org/Database-Router/sdk/go"
+	pb "github.com/Xeze-org/Database-Router/sdk/go/proto/dbrouter"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/structpb"
 )

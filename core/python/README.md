@@ -7,7 +7,7 @@ Official unified database wrapper for the Xeze infrastructure. Provides a single
 ## Installation
 
 ```bash
-pip install git+https://code.xeze.org/xeze/xeze-dbr-core.git
+pip install git+https://github.com/Xeze-org/xeze-dbr-core.git
 ```
 
 Or install locally for development:

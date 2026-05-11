@@ -34,9 +34,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://code.xeze.org/xeze/xeze-dbr-core"
-Repository = "https://code.xeze.org/xeze/xeze-dbr-core"
-"Bug Tracker" = "https://code.xeze.org/xeze/xeze-dbr-core/issues"
+Homepage = "https://github.com/Xeze-org/xeze-dbr-core"
+Repository = "https://github.com/Xeze-org/xeze-dbr-core"
+"Bug Tracker" = "https://github.com/Xeze-org/xeze-dbr-core/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

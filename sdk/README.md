@@ -1,12 +1,12 @@
 # Database Router SDKs
 
-Official low-level client libraries for the [Xeze Database Router](https://code.xeze.org/xeze/Database-Router).
+Official low-level client libraries for the [Xeze Database Router](https://github.com/Xeze-org/Database-Router).
 
 | SDK | Package | Install |
 |-----|---------|---------|
 | [Python](./python/) | [`xeze-dbr`](https://pypi.org/project/xeze-dbr/) | `pip install xeze-dbr` |
 | [Node.js](./node/) | [`@xeze/dbr`](https://www.npmjs.com/package/@xeze/dbr) | `npm install @xeze/dbr` |
-| [Go](./go/) | `code.xeze.org/xeze/Database-Router/sdk/go` | `go get code.xeze.org/xeze/Database-Router/sdk/go` |
+| [Go](./go/) | `github.com/Xeze-org/Database-Router/sdk/go` | `go get github.com/Xeze-org/Database-Router/sdk/go` |
 | [Rust](./rust/) | [`xeze-dbr`](https://crates.io/crates/xeze-dbr) | `cargo add xeze-dbr` |
 
 ## Features

@@ -12,7 +12,7 @@ Add the following to your `build.zig.zon`:
 .{
     .dependencies = .{
         .@"xeze-dbr" = .{
-            .url = "https://code.xeze.org/xeze/Database-Router/archive/main.tar.gz",
+            .url = "https://github.com/Xeze-org/Database-Router/archive/main.tar.gz",
             // Make sure to append the hash!
         },
     },
