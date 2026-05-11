@@ -3,6 +3,7 @@ module db-router
 go 1.24.0
 
 require (
+	github.com/Xeze-org/Database-Router/sdk/go v0.0.0-00010101000000-000000000000
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/lib/pq v1.10.9
 	go.mongodb.org/mongo-driver v1.13.1
@@ -27,3 +28,5 @@ require (
 	golang.org/x/text v0.32.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217 // indirect
 )
+
+replace github.com/Xeze-org/Database-Router/sdk/go => ./sdk/go

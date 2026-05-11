@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	pb "db-router/proto/dbrouter"
+	pb "github.com/Xeze-org/Database-Router/sdk/go/proto/dbrouter"
 	"db-router/internal/service"
 )
 

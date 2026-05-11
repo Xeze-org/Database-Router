@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 
-	pb "db-router/proto/dbrouter"
+	pb "github.com/Xeze-org/Database-Router/sdk/go/proto/dbrouter"
 	"db-router/internal/service"
 )
 

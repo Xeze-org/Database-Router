@@ -2608,7 +2608,7 @@ const file_dbrouter_proto_rawDesc = "" +
 	"\bSetValue\x12\x19.dbrouter.SetValueRequest\x1a\x1a.dbrouter.SetValueResponse\x12A\n" +
 	"\bGetValue\x12\x19.dbrouter.GetValueRequest\x1a\x1a.dbrouter.GetValueResponse\x12D\n" +
 	"\tDeleteKey\x12\x1a.dbrouter.DeleteKeyRequest\x1a\x1b.dbrouter.DeleteKeyResponse\x12?\n" +
-	"\x04Info\x12\x1a.dbrouter.RedisInfoRequest\x1a\x1b.dbrouter.RedisInfoResponseB\x1aZ\x18db-router/proto/dbrouterb\x06proto3"
+	"\x04Info\x12\x1a.dbrouter.RedisInfoRequest\x1a\x1b.dbrouter.RedisInfoResponseB;Z9github.com/Xeze-org/Database-Router/sdk/go/proto/dbrouterb\x06proto3"
 
 var (
 	file_dbrouter_proto_rawDescOnce sync.Once

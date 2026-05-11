@@ -12,7 +12,7 @@ import (
 	"db-router/internal/server"
 	"db-router/internal/service"
 	"db-router/internal/tlsconfig"
-	pb "db-router/proto/dbrouter"
+	pb "github.com/Xeze-org/Database-Router/sdk/go/proto/dbrouter"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"

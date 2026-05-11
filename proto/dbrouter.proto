@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package dbrouter;
 
-option go_package = "db-router/proto/dbrouter";
+option go_package = "github.com/Xeze-org/Database-Router/sdk/go/proto/dbrouter";
 
 import "google/protobuf/struct.proto";
 
