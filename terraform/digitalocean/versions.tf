@@ -6,12 +6,13 @@ terraform {
       source  = "digitalocean/digitalocean"
       version = "~> 2.0"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 4.0"
+    }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.6"
+      version = ">= 3.6"
     }
   }
 }
-
-# Token comes from DIGITALOCEAN_TOKEN env var — never hardcode it.
-provider "digitalocean" {}

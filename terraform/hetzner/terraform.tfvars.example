@@ -1,0 +1,18 @@
+# Hetzner Cloud — copy to terraform.tfvars and fill in.
+# Credentials come from env vars:
+#   HCLOUD_TOKEN         (compute)
+#   CLOUDFLARE_API_TOKEN (DNS)
+# Passwords are auto-generated — shown after `terraform apply`.
+
+# IMPORTANT: restrict to your IP! Find yours: curl ifconfig.me
+allowed_ips = ["YOUR_IP/32"]
+
+# DNS (managed in Cloudflare)
+domain          = "0.xeze.org"
+subdomain       = "db"
+cloudflare_zone = "xeze.org"
+
+# Compute (optional overrides)
+# region        = "nbg1"
+# instance_size = "cx22"
+# image         = "debian-12"

@@ -1,50 +1,60 @@
 ############################################
-# Firewall — db-router
+# DigitalOcean compute — droplet + firewall + SSH key
 ############################################
 
-resource "digitalocean_firewall" "db_router_fw" {
-  name       = "${var.droplet_name}-fw"
-  depends_on = [digitalocean_droplet.db_router]
+terraform {
+  required_providers {
+    digitalocean = {
+      source  = "digitalocean/digitalocean"
+      version = "~> 2.0"
+    }
+  }
+}
 
-  droplet_ids = [digitalocean_droplet.db_router.id]
+resource "digitalocean_ssh_key" "this" {
+  name       = "${var.server_name}-key"
+  public_key = var.ssh_public_key
+}
 
-  # ── Inbound rules ────────────────────────────────────────────────────
+resource "digitalocean_droplet" "this" {
+  name     = var.server_name
+  region   = var.region
+  size     = var.instance_size
+  image    = var.image
+  ssh_keys = [digitalocean_ssh_key.this.id]
+  tags     = var.tags
+}
 
-  # SSH — restricted to allowed IPs
+resource "digitalocean_firewall" "this" {
+  name        = "${var.server_name}-fw"
+  droplet_ids = [digitalocean_droplet.this.id]
+
   inbound_rule {
     protocol         = "tcp"
     port_range       = "22"
     source_addresses = var.allowed_ips
   }
-
-  # HTTP — open (required for Let's Encrypt ACME + Caddy redirect)
   inbound_rule {
     protocol         = "tcp"
     port_range       = "80"
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
-
-  # HTTPS — open (Caddy serves gRPC through mTLS)
   inbound_rule {
     protocol         = "tcp"
     port_range       = "443"
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
-  # ── Outbound rules (unrestricted) ──────────────────────────────────
-
   outbound_rule {
     protocol              = "tcp"
     port_range            = "1-65535"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
-
   outbound_rule {
     protocol              = "udp"
     port_range            = "1-65535"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
-
   outbound_rule {
     protocol              = "icmp"
     destination_addresses = ["0.0.0.0/0", "::/0"]

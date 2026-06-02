@@ -1,0 +1,17 @@
+# Azure — copy to terraform.tfvars and fill in.
+# Credentials come from env vars:
+#   ARM_CLIENT_ID / ARM_CLIENT_SECRET / ARM_SUBSCRIPTION_ID / ARM_TENANT_ID
+#   CLOUDFLARE_API_TOKEN  (DNS)
+# Passwords are auto-generated — shown after `terraform apply`.
+
+# IMPORTANT: restrict to your IP! Find yours: curl ifconfig.me
+allowed_ips = ["YOUR_IP/32"]
+
+# DNS (managed in Cloudflare)
+domain          = "0.xeze.org"
+subdomain       = "db"
+cloudflare_zone = "xeze.org"
+
+# Compute (optional overrides) — region is the Azure location
+# region        = "eastus"
+# instance_size = "Standard_B1ms"

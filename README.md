@@ -107,28 +107,36 @@ Before deploying the Database Router to production, ensure you have the followin
 
 - **Docker & Docker Compose**: Must be installed on your local system or deployment server.
 - **Domain Name**: You must have a registered domain name (e.g., `example.com`).
-- **Cloud Provider Name Servers**: The name servers for your domain **must** be managed by your cloud provider (e.g., DigitalOcean, Cloudflare). This is required for automatic DNS management and Let's Encrypt / mTLS certificate generation.
-- **Provider API Token**: You must have a valid API token from your cloud provider to allow Terraform and Ansible to automatically provision and configure your infrastructure.
+- **Cloudflare-managed DNS**: Your domain's DNS **must** be managed in **Cloudflare**. DNS is provider-independent — you can run on any cloud while DNS stays on Cloudflare. This powers automatic DNS management and Let's Encrypt / mTLS certificate generation. You'll need a `CLOUDFLARE_API_TOKEN` with `Zone:Read` + `DNS:Edit`.
+- **Cloud Provider API Token**: A valid API token/credentials for your chosen compute provider — **DigitalOcean, Linode, Hetzner, AWS, GCP, or Azure** — so Terraform and Ansible can provision and configure your infrastructure.
 
 ---
 
 ## 🚀 Quick Start (Cloud Deployment)
 
-The fastest way to deploy the entire stack to DigitalOcean is using our automated deployer.
+The fastest way to deploy the entire stack to **any supported cloud** (DigitalOcean, Linode, Hetzner, AWS, GCP, Azure) is using our automated deployer. Pick a `CLOUD_PROVIDER`, set its credentials, and provide a `CLOUDFLARE_API_TOKEN` for DNS.
 
 **Mac / Linux:**
 
 ```bash
 cd deployer
-DIGITALOCEAN_TOKEN="your_token_here" docker compose up -d
+CLOUD_PROVIDER=digitalocean \
+DIGITALOCEAN_TOKEN="your_token_here" \
+CLOUDFLARE_API_TOKEN="your_cloudflare_token" \
+docker compose up -d
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
 cd deployer
-$env:DIGITALOCEAN_TOKEN="your_token_here"; docker compose up -d
+$env:CLOUD_PROVIDER="digitalocean"
+$env:DIGITALOCEAN_TOKEN="your_token_here"
+$env:CLOUDFLARE_API_TOKEN="your_cloudflare_token"
+docker compose up -d
 ```
+
+> Deploying to a different cloud? Set `CLOUD_PROVIDER` to `linode` / `hetzner` / `aws` / `gcp` / `azure` and supply that provider's credentials instead. See the [deployer guide](deployer/) for the per-provider credential list.
 
 ---
 
@@ -186,9 +194,12 @@ Database-Router/
 │   ├── rust/         #   cargo add xeze-dbr-core
 │   └── go/           #   go get .../core/go
 ├── examples/         # Demo apps and playground
-├── deployer/         # One-command cloud deployer
-├── terraform/        # Infrastructure provisioning
-├── ansible/          # Server configuration automation
+├── deployer/         # One-command multi-cloud deployer
+├── terraform/        # Multi-cloud provisioning
+│   ├── modules/      #   shared: secrets, dns-cloudflare, compute/<cloud>
+│   ├── digitalocean/ #   per-provider roots (do/linode/hetzner/aws/gcp/azure)
+│   └── ...           #   pick the dir matching CLOUD_PROVIDER
+├── ansible/          # Server configuration automation (cloud-agnostic)
 ├── certs/            # TLS certificate generation scripts
 └── docs/             # API reference and guides
 ```

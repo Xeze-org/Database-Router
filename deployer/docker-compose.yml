@@ -1,13 +1,22 @@
-# db-router deployer — one-command infrastructure
+# db-router deployer — one-command multi-cloud infrastructure
 #
-# Usage:
-#   DIGITALOCEAN_TOKEN=dop_v1_xxx docker compose up
+# Pick a compute provider with CLOUD_PROVIDER (default: digitalocean).
+# DNS is always managed in Cloudflare (CLOUDFLARE_API_TOKEN required).
+#
+# Usage (DigitalOcean):
+#   CLOUD_PROVIDER=digitalocean DIGITALOCEAN_TOKEN=dop_v1_xxx \
+#   CLOUDFLARE_API_TOKEN=cf_xxx docker compose up
+#
+# Usage (Hetzner):
+#   CLOUD_PROVIDER=hetzner HCLOUD_TOKEN=xxx \
+#   CLOUDFLARE_API_TOKEN=cf_xxx docker compose up
 #
 # With your own SSH key:
-#   DIGITALOCEAN_TOKEN=dop_v1_xxx docker compose run --rm -v ~/.ssh:/root/.ssh:ro deploy
+#   ... docker compose run --rm -v ~/.ssh:/root/.ssh:ro deploy
 #
 # Destroy:
-#   DIGITALOCEAN_TOKEN=dop_v1_xxx DESTROY=true docker compose up
+#   CLOUD_PROVIDER=hetzner HCLOUD_TOKEN=xxx CLOUDFLARE_API_TOKEN=cf_xxx \
+#   DESTROY=true docker compose up
 
 services:
   deploy:
@@ -15,13 +24,33 @@ services:
       context: ..
       dockerfile: deployer/Dockerfile
     environment:
-      - DIGITALOCEAN_TOKEN=${DIGITALOCEAN_TOKEN}
+      # ── Provider selection + orchestration ──────────────────────────────
+      - CLOUD_PROVIDER=${CLOUD_PROVIDER:-digitalocean}
       - DESTROY=${DESTROY:-false}
-      # Optional overrides (uncomment as needed):
+
+      # ── DNS (always required) ───────────────────────────────────────────
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN:-}
+
+      # ── Compute credentials (set the ones for your CLOUD_PROVIDER) ───────
+      - DIGITALOCEAN_TOKEN=${DIGITALOCEAN_TOKEN:-}
+      - LINODE_TOKEN=${LINODE_TOKEN:-}
+      - HCLOUD_TOKEN=${HCLOUD_TOKEN:-}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
+      - GOOGLE_CREDENTIALS=${GOOGLE_CREDENTIALS:-}
+      - GOOGLE_PROJECT=${GOOGLE_PROJECT:-}
+      - ARM_CLIENT_ID=${ARM_CLIENT_ID:-}
+      - ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET:-}
+      - ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID:-}
+      - ARM_TENANT_ID=${ARM_TENANT_ID:-}
+
+      # ── Optional overrides (uncomment as needed) ────────────────────────
       # - TF_VAR_domain=0.xeze.org
       # - TF_VAR_subdomain=db
+      # - TF_VAR_cloudflare_zone=xeze.org
       # - TF_VAR_region=blr1
-      # - TF_VAR_ssh_key_name=ayush
+      # - TF_VAR_instance_size=s-1vcpu-2gb
+      # - TF_VAR_enable_mtls=true
       # - CADDY_EMAIL=admin@example.com
     volumes:
       - ./state:/workspace/state

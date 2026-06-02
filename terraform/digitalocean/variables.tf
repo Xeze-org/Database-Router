@@ -1,9 +1,9 @@
 ############################################
-# Droplet
+# Compute (DigitalOcean defaults)
 ############################################
 
-variable "droplet_name" {
-  description = "Name of the DigitalOcean droplet"
+variable "server_name" {
+  description = "Name of the server / droplet"
   type        = string
   default     = "db-router"
 }
@@ -14,8 +14,8 @@ variable "region" {
   default     = "blr1"
 }
 
-variable "droplet_size" {
-  description = "Droplet size slug (1 GB is enough for light workloads)"
+variable "instance_size" {
+  description = "Droplet size slug"
   type        = string
   default     = "s-1vcpu-2gb"
 }
@@ -26,39 +26,48 @@ variable "image" {
   default     = "debian-13-x64"
 }
 
-############################################
-# SSH — hybrid key handling
-#
-# Container auto-generates a key → sets ssh_public_key via TF_VAR.
-# Manual use with an existing DO key → sets ssh_key_name instead.
-############################################
-
-variable "ssh_key_name" {
-  description = "Name of an SSH key already uploaded to your DO account (used when ssh_public_key is empty)"
-  type        = string
-  default     = "ayush"
+variable "tags" {
+  description = "Tags applied to the droplet"
+  type        = list(string)
+  default     = ["terraform", "db-router", "grpc"]
 }
 
+############################################
+# SSH
+############################################
+
 variable "ssh_public_key" {
-  description = "Public key content to upload to DO (set by the deploy container when auto-generating keys; leave empty for manual use)"
+  description = "Public SSH key uploaded to the server (set by the deployer; required for manual use)"
   type        = string
   default     = ""
 }
 
 ############################################
-# Domain / DNS
+# DNS (Cloudflare)
 ############################################
 
 variable "domain" {
-  description = "Base domain managed in DigitalOcean DNS"
+  description = "Base domain for the db-router record (e.g. 0.xeze.org)"
   type        = string
   default     = "0.xeze.org"
 }
 
 variable "subdomain" {
-  description = "Subdomain for the db-router A record (e.g. 'db' → db.0.xeze.org)"
+  description = "Subdomain for the A record (e.g. 'db' -> db.0.xeze.org)"
   type        = string
   default     = "db"
+}
+
+variable "cloudflare_zone" {
+  description = "Cloudflare zone (registered domain) that manages the DNS"
+  type        = string
+  default     = "xeze.org"
+}
+
+variable "cloudflare_zone_id" {
+  description = "Cloudflare zone ID. If empty, looked up by cloudflare_zone name."
+  type        = string
+  default     = ""
 }
 
 ############################################
@@ -84,33 +93,17 @@ variable "mongo_user" {
 }
 
 ############################################
-# Access control
+# Access control & ports
 ############################################
 
 variable "allowed_ips" {
-  description = "CIDRs allowed to reach SSH and gRPC. Default is your IP only — never use 0.0.0.0/0 in production."
+  description = "CIDRs allowed to reach SSH. Default is open — restrict in production."
   type        = list(string)
   default     = ["0.0.0.0/0", "::/0"]
 }
 
-############################################
-# Ports
-############################################
-
 variable "grpc_port" {
-  description = "gRPC server port"
+  description = "gRPC server port (internal; fronted by Caddy on 443)"
   type        = number
   default     = 50051
-}
-
-
-
-############################################
-# mTLS
-############################################
-
-variable "enable_mtls" {
-  description = "Enable mTLS on the gRPC server (Caddy verifies client certs at the edge)"
-  type        = bool
-  default     = true
 }
