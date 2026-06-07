@@ -13,7 +13,7 @@ categories = ["database", "network-programming"]
 xeze-dbr = "0.1.1"
 tokio = { version = "1", features = ["full"] }
 tonic = "0.14"
-prost = "0.13"
+prost = "0.14"
 prost-types = "0.13"
 reqwest = { version = "0.13", features = ["json"], default-features = false }
 serde = { version = "1", features = ["derive"] }
