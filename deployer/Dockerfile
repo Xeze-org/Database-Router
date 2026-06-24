@@ -23,7 +23,7 @@ RUN apk add --no-cache \
 
 WORKDIR /workspace
 
-COPY terraform/ ./terraform/
+COPY providers/ ./providers/
 COPY ansible/   ./ansible/
 COPY deployer/entrypoint.sh .
 

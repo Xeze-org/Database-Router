@@ -24,7 +24,7 @@ Deploy the full db-router stack (PostgreSQL + MongoDB + Redis + gRPC router) on 
 Each provider has a thin **root directory** that wires three shared modules:
 
 ```
-terraform/
+providers/
 ├── modules/
 │   ├── secrets/          # auto-generated DB passwords + credentials summary
 │   ├── dns-cloudflare/   # Cloudflare A records (DNS-only / proxied=false)
@@ -61,14 +61,14 @@ Pick your provider's directory and set the matching credentials. Example for **H
 export HCLOUD_TOKEN="xxxxxxxx"
 export CLOUDFLARE_API_TOKEN="cf_xxxxxxxx"
 
-cd terraform/hetzner
+cd providers/hetzner
 cp terraform.tfvars.example terraform.tfvars   # edit allowed_ips, domain, ssh_public_key
 terraform init
 terraform plan
 terraform apply
 ```
 
-DigitalOcean instead? `cd terraform/digitalocean` and `export DIGITALOCEAN_TOKEN=...`. The flow is identical for every provider.
+DigitalOcean instead? `cd providers/digitalocean` and `export DIGITALOCEAN_TOKEN=...`. The flow is identical for every provider.
 
 Then run [Ansible](../ansible/) to configure the server, or use the [deployer container](../deployer/) which does both automatically.
 
@@ -132,6 +132,6 @@ break all three. The module creates `A` records for `<subdomain>.<domain>` and
 ## Destroy
 
 ```bash
-cd terraform/<provider>
+cd providers/<provider>
 terraform destroy
 ```

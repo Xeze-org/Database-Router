@@ -195,7 +195,7 @@ Database-Router/
 │   └── go/           #   go get .../core/go
 ├── examples/         # Demo apps and playground
 ├── deployer/         # One-command multi-cloud deployer
-├── terraform/        # Multi-cloud provisioning
+├── providers/        # Multi-cloud provisioning
 │   ├── modules/      #   shared: secrets, dns-cloudflare, compute/<cloud>
 │   ├── digitalocean/ #   per-provider roots (do/linode/hetzner/aws/gcp/azure)
 │   └── ...           #   pick the dir matching CLOUD_PROVIDER
@@ -225,7 +225,7 @@ Detailed guides and automation playbooks are included in the repository:
 - **[gRPC API Reference](docs/api.md)** — Full RPC definitions for PostgreSQL, MongoDB, and Redis services.
 - **[Configuration](docs/config.md)** — Explanations of all JSON config fields and environment variables.
 - **[mTLS Guide](docs/mtls-guide.md)** — Instructions on certificate generation and mTLS setup.
-- **[Terraform Infrastructure](terraform/)** — One-command cloud infrastructure provisioning.
+- **[Terraform Infrastructure](providers/)** — One-command cloud infrastructure provisioning.
 - **[Ansible Setup](ansible/)** — Automated server configuration, proxy setup, and mTLS enforcement.
 - **[Deployer](deployer/)** — A fully automated container to deploy everything with a single `docker run` command.
 

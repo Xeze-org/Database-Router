@@ -19,7 +19,7 @@ STATE_DIR="/workspace/state"
 ANSIBLE_DIR="/workspace/ansible"
 
 CLOUD_PROVIDER="${CLOUD_PROVIDER:-digitalocean}"
-TF_DIR="/workspace/terraform/${CLOUD_PROVIDER}"
+TF_DIR="/workspace/providers/${CLOUD_PROVIDER}"
 
 banner() {
   echo -e "${CYAN}"
