@@ -3,7 +3,7 @@ module github.com/Xeze-org/Database-Router/core/go
 go 1.24.0
 
 require (
-	github.com/Xeze-org/Database-Router/sdk/go v0.0.0-20260511083456-dd4594e6a360
+	github.com/Xeze-org/Database-Router/sdk/go v0.0.0-20260624020915-4cc6935a3ec3
 	github.com/hashicorp/vault/api v1.23.0
 	google.golang.org/grpc v1.79.3
 	google.golang.org/protobuf v1.36.11
