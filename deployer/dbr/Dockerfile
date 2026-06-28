@@ -14,7 +14,7 @@ COPY . ./
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o db-router ./cmd/
 
 # ---- Run Stage ──────────────────────────────────────────────────────────────
-FROM alpine:3.23
+FROM alpine:3.24
 
 LABEL org.opencontainers.image.title="db-router" \
       org.opencontainers.image.description="Unified gRPC router for PostgreSQL, MongoDB and Redis" \
